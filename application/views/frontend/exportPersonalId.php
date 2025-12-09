@@ -21,10 +21,12 @@ ob_start();
 						<span style="font-size:18px;font-weight:bold;color:#000099;font-family:'Arial Black';">PT. ANDHINI EKA KARYA SEJAHTERA</span><br>
 						<span style="font-size:11px;font-weight:bold;color:#000099;font-family:'Arial Black';;">(ANDHIKA  GROUP)</span>
 					</td>
+					<td></td>
 					<td>
 						<img src="./image/iso9001.png" style="width:18%;">
 					</td>
 				</tr>
+				<tr></tr>
 			</table>
 			<table style="width:745px;margin-top:10px;" cellpadding="2" cellspacing="0">
 				<tr>
@@ -89,17 +91,17 @@ ob_start();
 				</tr>
 				<tr>
 					<td style="width:265px;font-size:10px;border:1px solid black;"><?php echo $cocName; ?></td>
-					<!-- <td style="width:150px;font-size:10px;border:1px solid black;"><?php echo $cocDocNo; ?></td>
+					<td style="width:150px;font-size:10px;border:1px solid black;"><?php echo $cocDocNo; ?></td>
 					<td style="width:150px;font-size:10px;border:1px solid black;"><?php echo $cocIssPlace; ?></td>
 					<td style="width:90px;font-size:10px;border:1px solid black;text-align:center;"><?php echo $cocIssDate; ?></td>
-					<td style="width:90px;font-size:10px;border:1px solid black;text-align:center;"><?php echo $cocExpDate; ?></td> -->
+					<td style="width:90px;font-size:10px;border:1px solid black;text-align:center;"><?php echo $cocExpDate; ?></td>
 				</tr>
 				<tr>
 					<td style="width:265px;font-size:10px;border:1px solid black;"><?php echo $endorsName; ?></td>
-					<!-- <td style="width:150px;font-size:10px;border:1px solid black;"><?php echo $endorsDocNo; ?></td>
+					<td style="width:150px;font-size:10px;border:1px solid black;"><?php echo $endorsDocNo; ?></td>
 					<td style="width:150px;font-size:10px;border:1px solid black;"><?php echo $endorsIssPlace; ?></td>
 					<td style="width:90px;font-size:10px;border:1px solid black;text-align:center;"><?php echo $endorsIssDate; ?></td>
-					<td style="width:90px;font-size:10px;border:1px solid black;text-align:center;"><?php echo $endorsExpDate; ?></td> -->
+					<td style="width:90px;font-size:10px;border:1px solid black;text-align:center;"><?php echo $endorsExpDate; ?></td>
 				</tr>
 			</table>
 			<table style="width:745px;margin-top:5px;" cellpadding="2" cellspacing="0">
@@ -120,7 +122,7 @@ ob_start();
 					<td style="font-size:12px;font-weight:bold;font-family:serif;" align="center" colspan="5"><u>Certificates of Proficiency (COP) as per STCW '2010</u></td>
 				</tr>
 					<tr>
-						<td style="width:265px;font-size:10px;border:1px solid black;vertical-align:middle;text-align:center;background-color:#C6C6C6;"><b>Course Title</b></td>
+						<td style="width:265px;font-size:10px;border:1px solid black;vertical-align:middle;text-align:center;background-color:#C6C6C6;"><b>Courses Title</b></td>
 						<td style="width:150px;font-size:10px;border:1px solid black;vertical-align:middle;text-align:center;background-color:#C6C6C6;"><b>Document No</b></td>
 						<td style="width:150px;font-size:10px;border:1px solid black;vertical-align:middle;text-align:center;background-color:#C6C6C6;"><b>Place Issued</b></td>
 						<td style="width:90px;font-size:10px;border:1px solid black;vertical-align:middle;text-align:center;background-color:#C6C6C6;"><b>Date Issued</b></td>
