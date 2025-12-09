@@ -21,6 +21,7 @@ function saveData() {
     var txtTypeDocPI = $("#txtTypeDocPI").val();
     var txtNoDocPI = $("#txtNoDocPI").val();
     var fileUpload = $("#uploadFile").val();
+    var slcdisplayreport = $("#slcdisplayreport").val();
 
     formData.append('idEdit', idEdit);
     formData.append('idPerson', idPerson);
@@ -33,6 +34,7 @@ function saveData() {
 
     formData.append('cekFileUpload', fileUpload);
     formData.append('fileUpload', $("#uploadFile").prop('files')[0]);
+    formData.append('slcdisplayreport', slcdisplayreport);
 
     $("#idLoadingForm").show();
 
@@ -70,6 +72,7 @@ function getDataEdit(id) {
             $("#txtDate_validUntiPI").val(data.dateValid);
             $("#txtTypeDocPI").val(data.typeDoc);
             $("#txtNoDocPI").val(data.noDoc);
+            $("#slcdisplayreport").val(data.st_display_report);
 
             $("#idViewFile").empty();
             $("#idViewFile").append(data.btnFile);
@@ -149,16 +152,31 @@ function delData(id, idPerson) {
         <div class="row">
             <div class="col-md-3 col-xs-12">
                 <label for="txtTypeDocPI">Type of Document :</label>
-                <input type="text" class="form-control" id="txtTypeDocPI" value="" placeholder="Type of Document">
+                <select class="form-control input-sm" id="txtTypeDocPI">
+                    <Option value="KTP">KTP</Option>
+                    <Option value="KK">KK</Option>
+                    <Option value="NPWP">NPWP</Option>
+                    <Option value="NOMOR REKENING">NOMOR REKENING</Option>
+                    <Option value="SEAMAN BOOK">SEAMAN BOOK</Option>
+                    <Option value="PASSPORT">PASSPORT</Option>
+                </select>
             </div>
             <div class="col-md-2 col-xs-12">
                 <label for="txtNoDocPI">No Document :</label>
                 <input type="text" class="form-control" id="txtNoDocPI" value="" placeholder="No Document">
             </div>
+            <div class="col-md-2 col-xs-12">
+                <label for="slcdisplayreport">Status Display Report :</label>
+                <select class="form-control input-sm" id="slcdisplayreport">
+                    <Option value="Y">YES</Option>
+                    <Option value="N">NO</Option>
+                </select>
+            </div>
             <div class="col-md-3 col-xs-12">
                 <label for="uploadFile">File :</label>
                 <input type="file" class="form-control" id="uploadFile" value="">
             </div>
+
             <div class="col-md-1 col-xs-12">
                 <label>&nbsp;</label>
                 <button class="btn btn-warning btn-xs btn-block" title="Clear File"

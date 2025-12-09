@@ -3673,6 +3673,7 @@ class Report extends CI_Controller {
 			}
 			
 			$dataOut['photo'] = $photo;
+
 		}
 		
 		$this->load->view("frontend/exportPersonalId",$dataOut);
@@ -4789,125 +4790,92 @@ class Report extends CI_Controller {
 		return $dataOut;
 	}
 
-	function certDocDetail($idPerson = "",$type = "")
+	
+	function certDocDetail($idPerson = "", $type = "")
 	{
 		$dataContext = new DataContext();
-		$dataOut = array();
-		$docNo = "";
-		$expDate = "";
-		$issDate = "";
-		$issPlace = "";
-		$whereNya = "";
 		$trNya = "";
-
-		if($type == "idDocument")
-		{
-			$labelTemp = array('seaman book'=>'Seaman Book',
-							'passport'=>'PASSPORT',
-							'yellow card'=>'Yellow Fever',
-							'typhoid'=>'Typhoid');
-		}
-		if($type == "cop")
-		{
-			$labelTemp = array('Basic Safety Training'=>'BST (BASIC SAFETY TRAINING)',
-							'PROFICIENCY IN SURVIVAL CRAFT AND RESCUE BOAT'=>'PROFICIENCY IN SURVIVAL CRAFT',
-							'advance fire fighting'=>'AFF (ADVANCE FIRE FIGHTING)',
-							'medical first aid'=>'MFA (MEDICAL FIRST AID)',
-							'medical care on board'=>'MC (MEDICAL CARE)',
-							'bridge resource management'=>'Bridge Resource Management',
-							'engine resource management'=>'ERRM (ENGINE ROOM RESOURCE MANAGEMENT)',
-							'radar simulator'=>'Radar Simulator',
-							'arpa'=>'Arpa Simulator',
-							'gmdss'=>'GMDSS Radio Certificate',
-							'goc'=>'General Operator Certificate (GOC)',
-							'ism'=>'ISM Code',
-							'ecdis (generic)'=>'ECDIS Training Programme',
-							'ship security officer'=>'SSO (SHIP SECURITY OFFICER)',
-							'ship security awareness training'=>'SAT (SECURITY AWARENESS TRAINING)',
-							'sdsd'=>'SDSD (SEAFARER WITH DESIGNATED SECURITY DUTIES)',
-							// 'sdsd'=>'SEAFARER WITH DESIGNATED SECURITY DUTIES',
-							'imdg code'=>'IMDG CODE (INTERNATIONAL MARITIME DANGEROUS GOODS CODE)',
-							'electrician certificate'=>'Electrician Certficate',
-							'welder certificate'=>'Welder Certficate',
-							'endorsement for cook'=>'Food Handling / Ship Cook Certificate',
-							'mlc chief cook'=>'MLC Chief Cook',
-							'ship handling and manuvering'=>'SHMT (SHIP HANDLING AND MANUVERING TRAINING)',
-							'ship board safety officer training'=>'SSOT/SBSOT (SHIP SAFETY OFFICER TRAINING)',
-							'rating as able seafarer deck'=>'Rating As Able Seafarer Deck',
-							'rating as able seafarer engine'=>'Rating As Able Seafarer Engine',
-							'rating forming navigation & watchkeeping'=>'Rating Forming Part of A Navigation Watch',
-							'rating forming part of watchkeeping engine room'=>'Rating Forming Part of A Watch in Engine Room');
-		}
-		if($type == "tankerCert")
-		{
-			$labelTemp = array('basic training for oil and chemical tanker cargo operations'=>'BOCT (BASIC OIL CHEMICAL TANKER)',
-							'tanker safety (oil)'=>'AOT (ADVANCE OIL TANKER)',
-							'tanker safety (chemical)'=>'ACT (ADVANCE CHEMICAL TANKER)',
-							// 'tanker familiarisation (gas)'=>'Basic Liquid Gas Tanker',
-							'tanker safety (gas)'=>'BLGT (BASIC LIQUIFIED GAS TANKER)');
+		
+		
+		if ($type == "idDocument") {
+			$sql = "SELECT 
+						doctp as certname,
+						docno,
+						docexpdt as expdate,
+						docissdt as issdate,
+						docissplc as issplace
+					FROM tblpersonaldoc 
+					WHERE idperson = '" . $idPerson . "' 
+					AND deletests = 0 
+					AND st_display_report ='Y'
+					ORDER BY doctp ASC";
+			
+		} elseif ($type == "cop" || $type == "tankerCert") {
+			$sql = "SELECT 
+						certname,
+						docno,
+						expdate,
+						issdate,
+						issplace,
+						dispname
+					FROM tblcertdoc 
+					WHERE idperson = '" . $idPerson . "' 
+					AND display = 'Y' 
+					AND deletests = 0 
+					ORDER BY certname ASC";
+		} else {
+			return "<tr><td colspan='5'>Invalid certificate type</td></tr>";
 		}
 		
-		foreach ($labelTemp as $key => $val)
-		{
-			$docNo = "";
-			$issPlace = "";
-			$expDate = "";
-			$issDate = "";
+		$certificates = $this->MCrewscv->getDataQuery($sql);
+		
+		if (empty($certificates)) {
+			return "<tr><td colspan='5' style='font-size:10px;border:1px solid black;text-align:center;'>No certificates found</td></tr>";
+		}
+		
 
-			if($key != "")
-			{
-				if($key == "yellow card" OR $key == "typhoid")
-				{
-					$sql = "SELECT *
-							FROM tblpersonaldoc 
-							WHERE idperson='".$idPerson."' AND (doctp = '".$key."' OR doctp = '".$val."') AND deletests=0 ORDER BY docissdt DESC limit 0,1";
-					$rsl = $this->MCrewscv->getDataQuery($sql);
-
-					if(count($rsl) > 0)
-					{
-						$docNo = $rsl[0]->docno;
-						$issPlace = $rsl[0]->docissplc;
-						$expDate = $dataContext->convertReturnName($rsl[0]->docexpdt);
-						$issDate = $dataContext->convertReturnName($rsl[0]->docissdt);
-					}
-				}else{
-					$sql = "SELECT idcertdoc,docno,expdate,issdate,issplace
-							FROM tblcertdoc 
-							WHERE idperson='".$idPerson."' AND (certname = '".$key."' OR certname = '".$val."') AND display='Y' AND deletests=0 ORDER BY idcertdoc DESC limit 0,1";
-					$rsl = $this->MCrewscv->getDataQuery($sql);
-
-					if(count($rsl) > 0)
-					{
-						$docNo = $rsl[0]->docno;
-						$issPlace = $rsl[0]->issplace;
-
-						if($rsl[0]->issdate == "0000-00-00")
-						{
-							$issDate = "";
-						}else{
-							$issDate = $dataContext->convertReturnName($rsl[0]->issdate);
-						}
-
-						if($rsl[0]->expdate == "0000-00-00")
-						{
-							$expDate = "Permanent";
-						}else{
-							$expDate = $dataContext->convertReturnName($rsl[0]->expdate);
-						}
-					}
+		foreach ($certificates as $cert) {
+			if (empty($cert->docno)) continue;
+			
+	
+			$displayName = !empty($cert->dispname) ? $cert->dispname : $cert->certname;
+	
+			if ($type == "cop") {
+				if (stripos($displayName, 'tanker') !== false) {
+					continue; // Skip certificate tanker
 				}
 			}
-
-			$trNya .= "<tr>";
-				$trNya .= "<td style=\"width:265px;font-size:10px;border:1px solid black;\">".$val."</td>";
-				$trNya .= "<td style=\"width:150px;font-size:10px;border:1px solid black;\">".$docNo."</td>";
-				$trNya .= "<td style=\"width:150px;font-size:10px;border:1px solid black;\">".$issPlace."</td>";
-				$trNya .= "<td style=\"width:90px;font-size:10px;border:1px solid black;\" align=\"center\">".$issDate."</td>";
-				$trNya .= "<td style=\"width:90px;font-size:10px;border:1px solid black;\" align=\"center\">".$expDate."</td>";
-			$trNya .= "</tr>";
 			
-		}
 
+			elseif ($type == "tankerCert") {
+				if (stripos($displayName, 'tanker') === false) {
+					continue; 
+				}
+			}
+			
+			
+			$issDate = ($cert->issdate == "0000-00-00" || empty($cert->issdate)) 
+					? "" 
+					: $dataContext->convertReturnName($cert->issdate);
+			
+			$expDate = ($cert->expdate == "0000-00-00" || empty($cert->expdate)) 
+					? "Permanent" 
+					: $dataContext->convertReturnName($cert->expdate);
+		
+			$trNya .= "<tr>";
+			$trNya .= "<td style=\"width:265px;font-size:10px;border:1px solid black;\">" . $displayName . "</td>";
+			$trNya .= "<td style=\"width:150px;font-size:10px;border:1px solid black;\">" . $cert->docno . "</td>";
+			$trNya .= "<td style=\"width:150px;font-size:10px;border:1px solid black;\">" . $cert->issplace . "</td>";
+			$trNya .= "<td style=\"width:90px;font-size:10px;border:1px solid black;\" align=\"center\">" . $issDate . "</td>";
+			$trNya .= "<td style=\"width:90px;font-size:10px;border:1px solid black;\" align=\"center\">" . $expDate . "</td>";
+			$trNya .= "</tr>";
+		}
+		
+	
+		if (empty($trNya)) {
+			return "<tr><td colspan='5' style='font-size:10px;border:1px solid black;text-align:center;'>No " . $type . " certificates found</td></tr>";
+		}
+		
 		return $trNya;
 	}
 

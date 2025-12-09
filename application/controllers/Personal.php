@@ -517,6 +517,7 @@ class Personal extends CI_Controller {
 				$dataOut['dateValid'] = $rsl[0]->docexpdt;
 				$dataOut['typeDoc'] = $rsl[0]->doctp;
 				$dataOut['noDoc'] = $rsl[0]->docno;
+				$dataOut['st_display_report'] = $rsl[0]->st_display_report;
 
 				if($rsl[0]->doc_file != "")
 				{
@@ -1047,6 +1048,9 @@ class Personal extends CI_Controller {
 			$dataIns['docexpdt'] = $data['txtDate_validUntiPI'];
 			$dataIns['doctp'] = $data['txtTypeDocPI'];
 			$dataIns['docno'] = $data['txtNoDocPI'];
+			$dataIns['st_display_report'] = $data['slcdisplayreport'];
+		
+
 			
 			if($idEdit == "")
 			{
