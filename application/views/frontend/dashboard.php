@@ -934,7 +934,79 @@
             });
         }
         loadRankContractExpiry();
+
+        $(document).on("click", ".vessel-link", function (e) {
+            e.preventDefault();
+
+            let kode = $(this).data("vessel-kode");
+            let nama = $(this).data("vessel-nama"); 
+            loadCrewDetail(kode, nama);
+        });
+
+
     });
+
+    function loadCrewDetail(kodeKapal, namaKapal) {
+        $("#modalDetailCrew .modal-title").text("Detail Crew Onboard - " + namaKapal);
+
+        $("#modalDetailCrew").modal("show");
+
+        $.ajax({
+            url: "<?php echo base_url('Dashboard/crewOnboardDetailVessel'); ?>",
+            type: "POST",
+            data: { signVsl: kodeKapal },
+            beforeSend: function () {
+                $("#modalContent").html("<p>Loading Data...</p>");
+            },
+            success: function (res) {
+                try {
+                    let data = JSON.parse(res);
+
+                    let table = `
+                        <table class="table table-bordered table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th style="width:50px; text-align:center;">No</th>
+                                    <th>Nama</th>
+                                    <th>Rank</th>
+                                    <th>Sign On</th>
+                                    <th>Est. Sign Off</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    data.forEach((row, idx) => {
+                        table += `
+                            <tr>
+                                <td style="text-align:center;">${idx + 1}</td>
+                                <td>${row.fullname}</td>
+                                <td>${row.nmrank}</td>
+                                <td>${row.signondt}</td>
+                                <td>${row.signoffdt}</td>
+                            </tr>
+                        `;
+                    });
+
+                    table += `
+                            </tbody>
+                        </table>
+                        <p style="font-weight:bold; font-size:16px;">
+                            Total Crew: ${data.length}
+                        </p>
+                    `;
+
+                    $("#modalContent").html(table);
+
+                } catch (err) {
+                    $("#modalContent").html("<p>Error parsing data</p>");
+                }
+            }
+        });
+    }
+    
+
+
 
 
     $(document).ready(function() {
@@ -989,11 +1061,13 @@
 
     function searchVesselClient() {
         var selectedVesselClient = [];
-
-        if ($("#selectAllVesselsClientShip").is(":checked")) {
-            selectedVesselClient.push("All");
+        var selectAllCheckbox = document.getElementById('selectAllVessels');
+        if (selectAllCheckbox && selectAllCheckbox.checked) {
+            $('.vesselCheckbox').each(function() {
+                selectedVesselClient.push($(this).val());
+            });
         } else {
-            $("input[name='vesselsClient[]']:checked").each(function() {
+            $('.vesselCheckbox:checked').each(function() {
                 selectedVesselClient.push($(this).val());
             });
         }
@@ -1013,6 +1087,8 @@
             },
             dataType: "json",
             success: function(response) {
+
+                console.log(response);
                 if (!response || response.length === 0) {
                     alert('Data not found!');
                     return;
@@ -1031,7 +1107,11 @@
                     totalFemaleClient += parseInt(ship.total_female) || 0;
                     totalAgeSumClient += parseInt(ship.total_umur) || 0;
 
-                    vesselListClient.push(ship.nama_kapal);
+                    vesselListClient.push({
+                        kode: ship.kode_kapal,
+                        nama: ship.nama_kapal
+                    });
+
                 });
 
                 var avgAgeClient = totalCrewClient > 0 ? (totalAgeSumClient / totalCrewClient).toFixed(1) :
@@ -1043,18 +1123,32 @@
                 $("#txtTotalFemaleShipClient").text(totalFemaleClient);
 
                 var halfClient = Math.ceil(vesselListClient.length / 2);
+               
+                
                 $("#listKapalClient_1").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselListClient.slice(0, halfClient).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}' style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
+
                 $("#listKapalClient_2").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselListClient.slice(halfClient).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}'  style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
+
                 $("#idLoading").hide();
             },
             error: function(xhr, status, error) {
@@ -1066,11 +1160,13 @@
 
     function searchVessel() {
         var selectedVessels = [];
-
-        if ($("#selectAllVesselsOwnShip").is(":checked")) {
-            selectedVessels.push("All");
+        var selectAllCheckbox = document.getElementById('selectAllVesselsOwner');
+        if (selectAllCheckbox && selectAllCheckbox.checked) {
+            $('.vesselCheckboxOwner').each(function() {
+                selectedVessels.push($(this).val());
+            });
         } else {
-            $("input[name='vessels[]']:checked").each(function() {
+            $('.vesselCheckboxOwner:checked').each(function() {
                 selectedVessels.push($(this).val());
             });
         }
@@ -1079,6 +1175,7 @@
             alert("Pilih minimal satu kapal!");
             return;
         }
+
 
         $("#idLoading").show();
         $.ajax({
@@ -1106,7 +1203,10 @@
                     totalMale += parseInt(ship.total_male) || 0;
                     totalFemale += parseInt(ship.total_female) || 0;
                     totalAgeSum += parseInt(ship.total_umur) || 0;
-                    vesselList.push(ship.nama_kapal);
+                    vesselList.push({
+                        kode: ship.kode_kapal,
+                        nama: ship.nama_kapal
+                    });
                 });
 
                 var avgAge = totalCrew > 0 ? (totalAgeSum / totalCrew).toFixed(1) : 0;
@@ -1117,18 +1217,42 @@
                 $("#txtTotalFemale").text(totalFemale);
 
                 var half = Math.ceil(vesselList.length / 2);
-                $("#listKapal_1").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                // $("#listKapal_1").html(
+                //     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                //     vesselList.slice(0, half).map(vessel =>
+                //         `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
+                //         "") +
+                //     "</ul>"
+                // );
+                // $("#listKapal_2").html(
+                //     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                //     vesselList.slice(half).map(vessel =>
+                //         `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
+                //         "") +
+                //     "</ul>"
+                // );
+
+                 $("#listKapal_1").html(
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselList.slice(0, half).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
-                        "") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}' style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
+
                 $("#listKapal_2").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselList.slice(half).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
-                        "") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}'  style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
                 $("#idLoading").hide();
@@ -1165,6 +1289,7 @@
             checkboxes.style.display = "none";
         }
     }
+
     document.addEventListener("click", function(event) {
         var dropdown = document.getElementById("idCheckboxVesselClient");
         var selectBox = document.querySelector("[onclick='showCheckboxesClient()']");
@@ -1173,6 +1298,446 @@
             dropdown.style.display = "none";
         }
     });
+
+    function showCheckboxesCompany() {
+        var checkboxes = document.getElementById("idCheckboxNameCompany");
+        if (checkboxes.style.display === "none") {
+            checkboxes.style.display = "block";
+        } else {
+            checkboxes.style.display = "none";
+        }
+    }
+
+
+    function showCheckboxesCompanyOwner() {
+        var checkboxCompanyOwner = document.getElementById("idCheckboxNameCompanyOwner");
+        if (checkboxCompanyOwner.style.display === "none") {
+            checkboxCompanyOwner.style.display = "block";
+        } else {
+            checkboxCompanyOwner.style.display = "none";
+        }
+
+    }
+
+    document.addEventListener("click", function(event) {
+        // Company Client
+        var dropdownCompany = document.getElementById("idCheckboxNameCompany");
+        var selectCompany = document.querySelector("[onclick='showCheckboxesCompany()']");
+
+        if (!selectCompany.contains(event.target) && !dropdownCompany.contains(event.target)) {
+            dropdownCompany.style.display = "none";
+        }
+
+        //Company Owner
+        var dropdownCompanyOwner = document.getElementById("idCheckboxNameCompanyOwner");
+        var selectCompanyOwner = document.querySelector("[onclick='showCheckboxesCompanyOwner()']");
+
+        if (!selectCompanyOwner.contains(event.target) && !dropdownCompanyOwner.contains(event.target)) {
+            dropdownCompanyOwner.style.display = "none";
+        }
+       
+    });
+
+  
+    // Start Serach Data of Client Ship
+
+    $(document).ready(function() {
+        const companyCheckboxes = $('input[name="NameCompanyOption[]"]').not('#selectAllNameCompanyOption');
+        const selectAllCheckbox = $('#selectAllNameCompanyOption');
+
+        selectAllCheckbox.on('change', function() {
+            const isChecked = $(this).prop('checked');
+            companyCheckboxes.prop('checked', isChecked);
+            resetVesselSelectionDisplay();
+            triggerLoadVessels();
+        });
+
+        companyCheckboxes.on('change', function() {
+            const allAreChecked = companyCheckboxes.length === companyCheckboxes.filter(':checked').length;
+            selectAllCheckbox.prop('checked', allAreChecked);
+            triggerLoadVessels();
+            resetVesselSelectionDisplay();
+        });
+     
+        
+        triggerLoadVessels(); 
+    });
+
+
+    function resetVesselSelectionDisplay() {
+        const vesselCheckboxContainer = $('#idCheckboxVesselClient');
+        const vesselSelectBox = $('#vesselSelect');
+
+        if (vesselSelectBox.length) {
+            vesselSelectBox.html('<option value="">- Select Vessel -</option>');
+        }
+        
+        if (vesselCheckboxContainer.length) {
+            vesselCheckboxContainer.html('<div style="padding: 10px; color: #666;">Select company first</div>');
+        }
+
+        vesselCheckboxContainer.val(''); 
+    }
+
+    function triggerLoadVessels() {
+        var selectedNameCompany = [];
+        $('input[name="NameCompanyOption[]"]:checked').each(function() {
+            selectedNameCompany.push($(this).val());
+        });
+        
+        // console.log("Perusahaan terpilih:", selectedNameCompany);
+        updateSelectBoxCompanyClient();
+        loadVesselsByCompany(selectedNameCompany);
+    }
+
+    function updateSelectBoxCompanyClient() {
+        var selected = [];
+        $('input[name="NameCompanyOption[]"]:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        var selectBoxElement = document.getElementById('selectcompanyClient');
+        if (!selectBoxElement) return;
+        var companiesOnly = selected.filter(name => name !== 'All');
+
+        let displayValue = '';
+
+        if (selected.length === 0) {
+            displayValue = '- Select Company -';
+            
+        } else if (selected.includes('All')) {
+            displayValue = 'All Companies'; 
+            
+        } else if (companiesOnly.length === 1) {
+            displayValue = companiesOnly[0];
+            
+        } else {
+            displayValue = companiesOnly.length + ' companies';
+        }
+        
+        selectBoxElement.innerHTML = '<option value="" readonly>' + displayValue + '</option>';
+    }
+
+  
+    function loadVesselsByCompany(selectedCompanies) {
+        // console.log(selectedCompanies)
+        if (!selectedCompanies || selectedCompanies.length === 0) {
+            // console.log("No companies selected");
+            $('#idCheckboxVesselClient').html('<div style="padding: 10px; color: #666;">Select company first</div>');
+            $('#idCheckboxVesselClient').val('');
+            return;
+        }
+        
+        $('#idCheckboxVesselClient').html('<div style="padding: 10px; text-align: center;">Loading vessels...</div>').show();
+        $.ajax({
+            url: "<?php echo base_url('dashboard/getMasterVesselWithParams'); ?>",
+            type: "POST",
+            data: { 
+                company: selectedCompanies 
+            },
+            dataType: "json",
+            success: function(vessels) {
+                if (vessels && vessels.length > 0) {
+                    renderVesselCheckboxes(vessels);
+                } else {
+                    $('#idCheckboxVesselClient').html(
+                        '<div style="color: red; padding: 10px;">No vessels found for selected companies</div>'
+                    );
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", error);
+                $('#idCheckboxVesselClient').html(
+                    '<div style="color: red; padding: 10px;">Failed to load vessels</div>'
+                );
+            }
+        });
+    }
+
+    function renderVesselCheckboxes(vessels) {            
+        var container = document.getElementById('idCheckboxVesselClient');
+        if (!container) {
+            console.error("Container 'idCheckboxVesselClient' not found!");
+            return;
+        }
+        
+        var html = '';
+        
+        if (vessels.length === 0) {
+            html = '<div style="padding: 10px; color: #666;">No vessels found</div>';
+        } else {
+            // "Select All" checkbox
+            html += '<label style="display: block; padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; margin-bottom: 5px;">' +
+                    '<input type="checkbox" id="selectAllVessels"> <b style="font-size: 13px;">All</b>' +
+                    '</label>';
+            
+            // List semua vessels
+            vessels.forEach(function(vessel) {
+                if (vessel && vessel.trim() !== '') {
+                    html += '<label style="display: block; padding: 5px; cursor: pointer; font-size: 13px;">' +
+                            '<input type="checkbox" class="vesselCheckbox" name="VesselOption[]" value="' + 
+                            vessel.replace(/"/g, '&quot;') + '"> ' + vessel +
+                            '</label>';
+                }
+            });
+        }
+        
+        container.innerHTML = html;
+        setTimeout(function() {
+            setupVesselEvents();
+        }, 10);
+    }
+
+
+    function setupVesselEvents() {
+        $('#selectAllVessels').off('change').on('change', function() {
+            var isChecked = $(this).prop('checked');
+            $('.vesselCheckbox').prop('checked', isChecked);
+            updateVesselSelectBox();
+        });
+        
+        $('.vesselCheckbox').off('change').on('change', function() {
+            updateVesselSelectBox();
+            updateSelectAllCheckbox();
+        });
+        
+        updateVesselSelectBox();
+    }
+
+    function updateVesselSelectBox() {
+        var selected = [];
+        $('.vesselCheckbox:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        var selectBox = document.getElementById('vesselSelect');
+        if (!selectBox) return;
+        
+        if (selected.length === 0) {
+            selectBox.innerHTML = '<option value="">- Select Vessel -</option>';
+        } else if (selected.length === 1) {
+            selectBox.innerHTML = '<option value="">' + selected[0] + '</option>';
+        }else {
+            selectBox.innerHTML = '<option value="">' + selected.length + ' Vessels</option>';
+        }
+    }
+    
+    function updateSelectAllCheckbox() {
+        var total = $('.vesselCheckbox').length;
+        var checked = $('.vesselCheckbox:checked').length;
+        var selectAll = document.getElementById('selectAllVessels');
+        if (selectAll) {
+            selectAll.checked = (total > 0 && total === checked);
+        }
+    }
+
+    // End Serach Data of Client Ship
+
+
+    // Start Search Data of Own Ship
+
+    $(document).ready(function() {
+        const companyCheckboxes = $('input[name="NameCompanyOwner[]"]').not('#selectAllNameCompanyOwner');
+        const selectAllCheckbox = $('#selectAllNameCompanyOwner');
+        
+        selectAllCheckbox.on('change', function() {
+            const isChecked = $(this).prop('checked');
+            companyCheckboxes.prop('checked', isChecked);
+            triggerLoadVesselsOwner();
+            resetVesselSelectionDisplayOwner();
+        });
+
+        companyCheckboxes.on('change', function() {
+            const allAreChecked = companyCheckboxes.length === companyCheckboxes.filter(':checked').length;
+            selectAllCheckbox.prop('checked', allAreChecked);
+            triggerLoadVesselsOwner();
+            resetVesselSelectionDisplayOwner();
+        });
+     
+        
+        triggerLoadVesselsOwner(); 
+    });
+
+    function resetVesselSelectionDisplayOwner() {
+        const vesselCheckboxContainer = $('#idCheckboxVesselOwnShip');
+        const vesselSelectBox = $('#vesselSelectOwner');
+
+        if (vesselSelectBox.length) {
+            vesselSelectBox.html('<option value="">- Select Vessel -</option>');
+        }
+        
+        if (vesselCheckboxContainer.length) {
+            vesselCheckboxContainer.html('<div style="padding: 10px; color: #666;">Select company first</div>');
+        }
+
+        vesselCheckboxContainer.val(''); 
+    }
+
+    function triggerLoadVesselsOwner() {
+        var selectedNameCompany = [];
+        $('input[name="NameCompanyOwner[]"]:checked').each(function() {
+            selectedNameCompany.push($(this).val());
+        });
+        
+        // console.log("Perusahaan terpilih:", selectedNameCompany);
+        updateSelectBoxCompanyOwner();
+        loadVesselOwnerByCompany(selectedNameCompany);
+    }
+
+    function updateSelectBoxCompanyOwner() {
+        var selected = [];
+        $('input[name="NameCompanyOwner[]"]:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        var selectBoxElement = document.getElementById('select-company-owner');
+        if (!selectBoxElement) return;
+        var companiesOnly = selected.filter(name => name !== 'All');
+
+        let displayValue = '';
+
+        if (selected.length === 0) {
+            displayValue = '- Select Company -';
+            
+        } else if (selected.includes('All')) {
+            displayValue = 'All Companies'; 
+            
+        } else if (companiesOnly.length === 1) {
+            displayValue = companiesOnly[0];
+            
+        } else {
+            displayValue = companiesOnly.length + ' companies';
+        }
+        
+        selectBoxElement.innerHTML = '<option value="" readonly>' + displayValue + '</option>';
+    }
+
+
+    function loadVesselOwnerByCompany(selectedCompanies) {
+
+        if (!selectedCompanies || selectedCompanies.length === 0) {
+            // console.log("No companies selected");
+            $('#idCheckboxVesselOwnShip').html('<div style="padding: 10px; color: #666;">Select company first</div>');
+            $('#idCheckboxVesselOwnShip').val('');
+            return;
+        }
+        
+
+        $('#idCheckboxVesselOwnShip').html('<div style="padding: 10px; text-align: center;">Loading vessels...</div>').show();
+        
+    
+        $.ajax({
+            url: "<?php echo base_url('dashboard/getMasterVesselWithParams'); ?>",
+            type: "POST",
+            data: { 
+                company: selectedCompanies 
+            },
+            dataType: "json",
+            success: function(vessels) {
+                // console.log("Vessels received:", vessels);
+                
+                if (vessels && vessels.length > 0) {
+                    renderVesselOwnerCheckboxes(vessels);
+                } else {
+                    $('#idCheckboxVesselOwnShip').html(
+                        '<div style="color: red; padding: 10px;">No vessels found for selected companies</div>'
+                    );
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", error);
+                $('#idCheckboxVesselOwnShip').html(
+                    '<div style="color: red; padding: 10px;">Failed to load vessels</div>'
+                );
+            }
+        });
+    }
+
+    function renderVesselOwnerCheckboxes(vessels) {
+        // console.log("Rendering vessels in idCheckboxVesselOwnShip:", vessels);
+        
+        var container = document.getElementById('idCheckboxVesselOwnShip');
+        if (!container) {
+            console.error("Container 'idCheckboxVesselOwnShip' not found!");
+            return;
+        }
+        
+        var html = '';
+        
+        if (vessels.length === 0) {
+            html = '<div style="padding: 10px; color: #666;">No vessels found</div>';
+        } else {
+            // "Select All" checkbox
+            html += '<label style="display: block; padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; margin-bottom: 5px;">' +
+                    '<input type="checkbox" id="selectAllVesselsOwner"> <b style="font-size: 13px;">All</b>' +
+                    '</label>';
+            
+            // List semua vessels
+            vessels.forEach(function(vessel) {
+                if (vessel && vessel.trim() !== '') {
+                    html += '<label style="display: block; padding: 5px; cursor: pointer; font-size: 13px;">' +
+                            '<input type="checkbox" class="vesselCheckboxOwner" name="VesselOption[]" value="' + 
+                            vessel.replace(/"/g, '&quot;') + '"> ' + vessel +
+                            '</label>';
+                }
+            });
+        }
+        
+        container.innerHTML = html;
+        setTimeout(function() {
+            setupVesselEventsOwner();
+        }, 10);
+    }
+
+
+    function setupVesselEventsOwner() {
+        $('#selectAllVesselsOwner').off('change').on('change', function() {
+            var isChecked = $(this).prop('checked');
+            $('.vesselCheckboxOwner').prop('checked', isChecked);
+            updateVesselSelectBoxOwner();
+        });
+        
+    
+        $('.vesselCheckboxOwner').off('change').on('change', function() {
+            updateVesselSelectBoxOwner();
+            updateSelectAllCheckboxOwner();
+        });
+        
+    
+        updateVesselSelectBoxOwner();
+    }
+
+
+    function updateVesselSelectBoxOwner() {
+        var selected = [];
+        $('.vesselCheckboxOwner:checked').each(function() {
+            selected.push($(this).val());
+        });
+        
+        var selectBox = document.getElementById('vesselSelectOwner');
+        if (!selectBox) return;
+        
+        if (selected.length === 0) {
+            selectBox.innerHTML = '<option value="">- Select Vessel -</option>';
+        } else if (selected.length === 1) {
+            selectBox.innerHTML = '<option value="">' + selected[0] + '</option>';
+        } 
+        else {
+            selectBox.innerHTML = '<option value="">' + selected.length + ' Vessels </option>';
+        }
+    }
+
+    function updateSelectAllCheckboxOwner() {
+        var total = $('.vesselCheckboxOwner').length;
+        var checked = $('.vesselCheckboxOwner:checked').length;
+        var selectAll = document.getElementById('selectAllVesselsOwner');
+        if (selectAll) {
+            selectAll.checked = (total > 0 && total === checked);
+        }
+    }
+
+    // Search Data of Own Ship
+
     </script>
     <style>
     body {
@@ -1293,17 +1858,33 @@
                 <!-- KAPAL CLIENT -->
                 <div class="col-md-6" style="margin-top: 20px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <h5 style="font-size:20px;">Data of Client Ship:</h5>
-                        <div onclick="showCheckboxesClient()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
-                        background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
-                            <select
+                        <h5 style="font-size:14px;">Data of Client Ship:</h5>
+                        <div onclick="showCheckboxesCompany()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
+                             background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                            <select  id="selectcompanyClient" 
                                 style="width: 100%; border: none; background: transparent; font-size: 14px; cursor: pointer;">
-                                <option readonly>- Select Vessel -</option>
+                                <option readonly>- Select Company -</option>
+                            </select>
+                            <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;"></div>
+                            <div id="idCheckboxNameCompany" style="display: none; border: 1px solid #ccc; border-radius: 8px; position: absolute; background: white; 
+                                                    width: 100%; z-index: 1; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+                                                    max-height: 210px; /* Tinggi untuk sekitar 5 item */
+                                                    overflow-y: auto; /* Tambahkan scroll jika lebih dari 5 */
+                                                    top: 100%; /* Agar muncul di bawah */
+                                                    margin-top: 5px;">
+                                <?php echo $TypeCompany; ?>
+                            </div>
+                        </div> 
+                        <div id="vesselDropdown" onclick="showCheckboxesClient()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
+                            background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                            <select id="vesselSelect" style="width: 100%; border: none; background: transparent; font-size: 14px; cursor: pointer;">
+                                <option value="" readonly>- Select Vessel -</option>
                             </select>
                             <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;"></div>
                             <div id="idCheckboxVesselClient" style="display: none; border: 1px solid #ccc; border-radius: 8px; position: absolute; background: white; 
-                            width: 100%; z-index: 1; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);">
-                                <?php echo $vesselTypeClient; ?>
+                                                                            width: 100%; z-index: 1000; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+                                                                            max-height: 210px; overflow-y: auto; top: 100%; margin-top: 5px;">
+                                <!-- Checkboxes akan dirender di sini via JavaScript -->
                             </div>
                         </div>
                         <button type="submit" onclick="searchVesselClient();"
@@ -1444,17 +2025,33 @@
                 <!-- KAPAL MILIK -->
                 <div class="col-md-6" style="margin-top: 20px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <h5 style="font-size:20px;">Data of Own Ship:</h5>
-                        <div onclick="showCheckboxes()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
-                        background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
-                            <select
+                        <h5 style="font-size:14px;">Data of Own Ship:</h5>
+                        <div onclick="showCheckboxesCompanyOwner()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
+                             background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                            <select id="select-company-owner"
                                 style="width: 100%; border: none; background: transparent; font-size: 14px; cursor: pointer;">
-                                <option readonly>- Select Vessel -</option>
+                                <option readonly>- Select Company -</option>
+                            </select>
+                            <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;"></div>
+                            <div id="idCheckboxNameCompanyOwner" style="display: none; border: 1px solid #ccc; border-radius: 8px; position: absolute; background: white; 
+                                                    width: 100%; z-index: 1; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+                                                    max-height: 210px; /* Tinggi untuk sekitar 5 item */
+                                                    overflow-y: auto; /* Tambahkan scroll jika lebih dari 5 */
+                                                    top: 100%; /* Agar muncul di bawah */
+                                                    margin-top: 5px;">
+                                <?php echo $TypeCompanyOwner; ?>
+                            </div>
+                        </div> 
+                        <div id="vesselDropdown" onclick="showCheckboxes()" style="position: relative; width: 150px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; 
+                            background: #fff; cursor: pointer; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                            <select id="vesselSelectOwner" style="width: 100%; border: none; background: transparent; font-size: 14px; cursor: pointer;">
+                                <option value="" readonly>- Select Vessel -</option>
                             </select>
                             <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0;"></div>
                             <div id="idCheckboxVesselOwnShip" style="display: none; border: 1px solid #ccc; border-radius: 8px; position: absolute; background: white; 
-                            width: 100%; z-index: 1; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);">
-                                <?php echo $vesselType; ?>
+                                                                            width: 100%; z-index: 1000; padding: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+                                                                            max-height: 210px; overflow-y: auto; top: 100%; margin-top: 5px;">
+                                <!-- Checkboxes akan dirender di sini via JavaScript -->
                             </div>
                         </div>
                         <button type="submit" onclick="searchVessel();"
@@ -1965,4 +2562,39 @@
             </div>
         </div>
     </div>
+</div>
+
+
+<!-- Modal Detail Crew -->
+<div class="modal fade" id="modalDetailCrew" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+
+      <!-- <div class="modal-header" style="background:#004080; color:white;">
+        <h5 class="modal-title">Detail Crew Onboard</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div> -->
+        <div class="modal-header" style="background:#004080; color:white; display:flex; align-items:center; justify-content:space-between;">
+            <!-- Title Center -->
+            <h5 class="modal-title" style="flex-grow:1; text-align:center; margin:0;color:white;"">
+               Detail Crew Onboard
+            </h5>
+
+            <!-- Button X (Right) -->
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:white; font-size:35px; opacity:1;">
+                <span aria-hidden="true">&times;</span>
+            </button>
+
+
+        </div>
+
+
+      <div class="modal-body">
+          <div id="modalContent"></div> 
+      </div>
+
+    </div>
+  </div>
 </div>

@@ -39,9 +39,74 @@ class Dashboard extends CI_Controller {
 		$dataOut['vesselType'] = $dataContext->getVesselOwnShipOption();
 		$dataOut['vesselTypeClient'] = $dataContext->getVesselClientShipOption();
 		$dataOut['TypeVessel'] = $dataContext->getVesselType();
+		$dataOut['TypeCompany'] = $dataContext->getNameCompanyOption();
+		$dataOut['TypeCompanyOwner'] = $dataContext->getNameCompanyOwner();
 
 		$this->load->view('frontend/dashboard',$dataOut);
 	}
+
+	function getMasterVesselWithParams()
+	{
+		$companyNames = $this->input->post('company');
+		
+		
+		if (empty($companyNames)) {
+			echo json_encode(array());
+			return;
+		}
+		
+	
+		if (!is_array($companyNames)) {
+			$companyNames = array($companyNames);
+		}
+		
+		if (count($companyNames) === 0) {
+			echo json_encode(array());
+			return;
+		}
+		
+		
+		$escapedCompanies = array();
+		foreach ($companyNames as $company) {
+			$escapedCompanies[] = $this->db->escape_str(trim($company));
+		}
+		
+	
+		$escapedCompanies = array_filter($escapedCompanies);
+		
+
+		if (empty($escapedCompanies)) {
+			echo json_encode(array());
+			return;
+		}
+		
+
+		$placeholders = implode(',', array_fill(0, count($escapedCompanies), '?'));
+		$sql = "SELECT DISTINCT nmvsl
+				FROM mstvessel
+				WHERE Deletests = '0'
+				AND st_display = 'Y'
+				AND nmvsl IS NOT NULL
+				AND nmvsl != ''
+				AND nmcmp IN (" . $placeholders . ")
+				ORDER BY nmvsl ASC";
+		
+		$query = $this->db->query($sql, $escapedCompanies);
+	
+		
+		$vessels = array();
+		if ($query->num_rows() > 0) {
+			foreach ($query->result() as $row) {
+				$vessels[] = $row->nmvsl;
+			}
+		}
+		
+		
+		header('Content-Type: application/json');
+		echo json_encode($vessels);
+	}
+
+
 
 	function getCrewOnboard($vslCode = "")
 	{
@@ -434,6 +499,8 @@ class Dashboard extends CI_Controller {
 					tblcontract B ON A.idperson = B.idperson
 				LEFT JOIN 
 					mstvessel D ON D.kdvsl = B.signonvsl 
+				LEFT JOIN 
+					mstrank E ON B.signonrank = E.kdrank
 				WHERE 
 					A.deletests = '0' 
 					AND B.deletests = '0' 
@@ -441,8 +508,11 @@ class Dashboard extends CI_Controller {
 					AND A.inaktif = '0' 
 					AND B.signoffdt = '0000-00-00'
 					AND $whereVessel
+					AND urutan > 0
 				GROUP BY 
-					D.kdvsl, D.nmvsl;
+					D.kdvsl, D.nmvsl
+				order by
+					D.nmvsl ASC
 				";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
@@ -492,6 +562,8 @@ class Dashboard extends CI_Controller {
 					mstcmprec C ON C.kdcmp = B.kdcmprec
 				LEFT JOIN 
 					mstvessel D ON D.kdvsl = B.signonvsl 
+				LEFT JOIN 
+					mstrank E ON B.signonrank = E.kdrank
 				WHERE 
 					A.deletests = '0' 
 					AND B.deletests = '0' 
@@ -500,14 +572,15 @@ class Dashboard extends CI_Controller {
 					AND D.deletests = '0' 
 					AND C.deletests = '0'
 					AND $whereVessel
+					AND E.urutan > 0
 				GROUP BY 
 					C.nmcmp, D.kdvsl, D.nmvsl
 				ORDER BY 
-					C.nmcmp, D.nmvsl
+					C.nmcmp, D.nmvsl ASC
 				";
 
 
-
+		// var_dump($sql);exit;
 		$result = $this->MCrewscv->getDataQuery($sql);
 		echo json_encode($result);
 	}
@@ -1057,5 +1130,55 @@ class Dashboard extends CI_Controller {
 
 		echo json_encode($dataOut);
 	}
+
+	function crewOnboardDetailVessel()
+	{
+		$signVsl = $this->input->post('signVsl');
+		if (empty($signVsl)) {
+				echo json_encode(array('error' => 'Kode kapal tidak ditemukan'));
+				return;
+		}
+		$whereSignVsl = $this->db->escape($signVsl);
+
+		$sql = "
+			SELECT 
+				B.signonvsl,
+				CONCAT_WS(' ', A.fname, A.mname, A.lname) AS fullname,
+				B.signondt,
+				B.estsignoffdt AS signoffdt,
+				C.nmrank
+			FROM mstpersonal A
+			LEFT JOIN tblcontract B ON A.idperson = B.idperson
+			LEFT JOIN mstrank C ON B.signonrank = C.kdrank
+			WHERE 1=1
+				AND A.inaktif = '0'
+				AND B.deletests = '0'
+				AND B.signoffdt = '0000-00-00'
+				AND B.signonvsl = $whereSignVsl
+				AND C.urutan > 0
+			ORDER BY C.urutan ASC
+		";
+
+		$result = $this->MCrewscv->getDataQuery($sql);
+
+		foreach ($result as &$row) {
+
+			if (!empty($row->signondt) && $row->signondt !== '0000-00-00') {
+				$row->signondt = date("d M Y", strtotime($row->signondt));
+			} else {
+				$row->signondt = "-";
+			}
+
+			
+			if (!empty($row->signoffdt) && $row->signoffdt !== '0000-00-00') {
+				$row->signoffdt = date("d M Y", strtotime($row->signoffdt));
+			} else {
+				$row->signoffdt = "-";
+			}
+		}
+
+		echo json_encode($result);
+	}
+
 
 }
