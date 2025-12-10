@@ -39,9 +39,74 @@ class Dashboard extends CI_Controller {
 		$dataOut['vesselType'] = $dataContext->getVesselOwnShipOption();
 		$dataOut['vesselTypeClient'] = $dataContext->getVesselClientShipOption();
 		$dataOut['TypeVessel'] = $dataContext->getVesselType();
+		$dataOut['TypeCompany'] = $dataContext->getNameCompanyOption();
+		$dataOut['TypeCompanyOwner'] = $dataContext->getNameCompanyOwner();
 
 		$this->load->view('frontend/dashboard',$dataOut);
 	}
+
+	function getMasterVesselWithParams()
+	{
+		$companyNames = $this->input->post('company');
+		
+		
+		if (empty($companyNames)) {
+			echo json_encode(array());
+			return;
+		}
+		
+	
+		if (!is_array($companyNames)) {
+			$companyNames = array($companyNames);
+		}
+		
+		if (count($companyNames) === 0) {
+			echo json_encode(array());
+			return;
+		}
+		
+		
+		$escapedCompanies = array();
+		foreach ($companyNames as $company) {
+			$escapedCompanies[] = $this->db->escape_str(trim($company));
+		}
+		
+	
+		$escapedCompanies = array_filter($escapedCompanies);
+		
+
+		if (empty($escapedCompanies)) {
+			echo json_encode(array());
+			return;
+		}
+		
+
+		$placeholders = implode(',', array_fill(0, count($escapedCompanies), '?'));
+		$sql = "SELECT DISTINCT nmvsl
+				FROM mstvessel
+				WHERE Deletests = '0'
+				AND st_display = 'Y'
+				AND nmvsl IS NOT NULL
+				AND nmvsl != ''
+				AND nmcmp IN (" . $placeholders . ")
+				ORDER BY nmvsl ASC";
+		
+		$query = $this->db->query($sql, $escapedCompanies);
+	
+		
+		$vessels = array();
+		if ($query->num_rows() > 0) {
+			foreach ($query->result() as $row) {
+				$vessels[] = $row->nmvsl;
+			}
+		}
+		
+		
+		header('Content-Type: application/json');
+		echo json_encode($vessels);
+	}
+
+
 
 	function getCrewOnboard($vslCode = "")
 	{
@@ -507,7 +572,7 @@ class Dashboard extends CI_Controller {
 				";
 
 
-
+		// var_dump($sql);exit;
 		$result = $this->MCrewscv->getDataQuery($sql);
 		echo json_encode($result);
 	}

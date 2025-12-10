@@ -537,7 +537,77 @@ class DataContext extends CI_Controller {
 			print json_encode($options);
 		}
 	}
+
+	function getNameCompanyOption($return = "")
+	{
+		$options = "<label style='display: block; padding: 5px; cursor: pointer;'>
+						<input type='checkbox' id='selectAllNameCompanyOption' name='NameCompanyOption[]' value ='All'> <b>All</b>
+					</label>";
+
 	
+		$sql = "SELECT DISTINCT nmcmp 
+				FROM mstvessel 
+				WHERE Deletests = '0' 
+				AND st_display = 'Y' 
+				AND nmcmp IS NOT NULL 
+				AND nmcmp != ''
+				AND st_own ='N'
+				ORDER BY nmcmp ASC";
+		
+		
+		$query = $this->db->query($sql);
+		$rsl = $query->result();
+
+		if ($rsl) {
+			foreach ($rsl as $row) {
+				$options .= "<label style='display: block; padding: 5px; cursor: pointer;'>
+								<input type='checkbox' name='NameCompanyOption[]' value='" . htmlspecialchars($row->nmcmp, ENT_QUOTES) . "'> " . htmlspecialchars($row->nmcmp) . "
+							</label>";
+			}
+		}
+
+		if ($return == "") {
+			return $options;
+		} else {
+			echo json_encode($options);
+		}
+	}
+
+	function getNameCompanyOwner($return = "")
+	{
+
+		$options = "<label style='display: block; padding: 5px; cursor: pointer;'>
+						<input type='checkbox' id='selectAllNameCompanyOwner' name='NameCompanyOwner[]' value ='All'> <b>All</b>
+					</label>";
+
+		$sql = "SELECT DISTINCT nmcmp 
+				FROM mstvessel 
+				WHERE Deletests = '0' 
+				AND st_display = 'Y' 
+				AND nmcmp IS NOT NULL 
+				AND nmcmp != ''
+				AND st_own = 'Y'
+				ORDER BY nmcmp ASC";
+		
+		
+		$query = $this->db->query($sql);
+		$rsl = $query->result();
+
+		if ($rsl) {
+			foreach ($rsl as $row) {
+				$options .= "<label style='display: block; padding: 5px; cursor: pointer;'>
+								<input type='checkbox' name='NameCompanyOwner[]' value='" . htmlspecialchars($row->nmcmp, ENT_QUOTES) . "'> " . htmlspecialchars($row->nmcmp) . "
+							</label>";
+			}
+		}
+
+		if ($return == "") {
+			return $options;
+		} else {
+			echo json_encode($options);
+		}
+	}
+
 	function getMstCertificateByOption($return = "", $typeVal = "")
 	{
 		$opt = "";
