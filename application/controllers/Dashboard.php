@@ -499,6 +499,8 @@ class Dashboard extends CI_Controller {
 					tblcontract B ON A.idperson = B.idperson
 				LEFT JOIN 
 					mstvessel D ON D.kdvsl = B.signonvsl 
+				LEFT JOIN 
+					mstrank E ON B.signonrank = E.kdrank
 				WHERE 
 					A.deletests = '0' 
 					AND B.deletests = '0' 
@@ -506,8 +508,11 @@ class Dashboard extends CI_Controller {
 					AND A.inaktif = '0' 
 					AND B.signoffdt = '0000-00-00'
 					AND $whereVessel
+					AND urutan > 0
 				GROUP BY 
-					D.kdvsl, D.nmvsl;
+					D.kdvsl, D.nmvsl
+				order by
+					D.nmvsl ASC
 				";
 
 		$result = $this->MCrewscv->getDataQuery($sql);
@@ -557,6 +562,8 @@ class Dashboard extends CI_Controller {
 					mstcmprec C ON C.kdcmp = B.kdcmprec
 				LEFT JOIN 
 					mstvessel D ON D.kdvsl = B.signonvsl 
+				LEFT JOIN 
+					mstrank E ON B.signonrank = E.kdrank
 				WHERE 
 					A.deletests = '0' 
 					AND B.deletests = '0' 
@@ -565,10 +572,11 @@ class Dashboard extends CI_Controller {
 					AND D.deletests = '0' 
 					AND C.deletests = '0'
 					AND $whereVessel
+					AND E.urutan > 0
 				GROUP BY 
 					C.nmcmp, D.kdvsl, D.nmvsl
 				ORDER BY 
-					C.nmcmp, D.nmvsl
+					C.nmcmp, D.nmvsl ASC
 				";
 
 
@@ -1125,16 +1133,11 @@ class Dashboard extends CI_Controller {
 
 	function crewOnboardDetailVessel()
 	{
-		$signVsl = $this->input->post('signVsl');   // nilai B.signonvsl
-
-		// Jika input kosong, handle supaya tidak error
+		$signVsl = $this->input->post('signVsl');
 		if (empty($signVsl)) {
-			echo json_encode(array('error' => 'Kode kapal tidak ditemukan'));
-			return;
+				echo json_encode(array('error' => 'Kode kapal tidak ditemukan'));
+				return;
 		}
-
-
-		// Escape supaya aman dari injection
 		$whereSignVsl = $this->db->escape($signVsl);
 
 		$sql = "
@@ -1142,7 +1145,7 @@ class Dashboard extends CI_Controller {
 				B.signonvsl,
 				CONCAT_WS(' ', A.fname, A.mname, A.lname) AS fullname,
 				B.signondt,
-				B.signoffdt,
+				B.estsignoffdt AS signoffdt,
 				C.nmrank
 			FROM mstpersonal A
 			LEFT JOIN tblcontract B ON A.idperson = B.idperson
@@ -1152,11 +1155,28 @@ class Dashboard extends CI_Controller {
 				AND B.deletests = '0'
 				AND B.signoffdt = '0000-00-00'
 				AND B.signonvsl = $whereSignVsl
-			ORDER BY fullname ASC
+				AND C.urutan > 0
+			ORDER BY C.urutan ASC
 		";
 
-		// Eksekusi query
 		$result = $this->MCrewscv->getDataQuery($sql);
+
+		foreach ($result as &$row) {
+
+			if (!empty($row->signondt) && $row->signondt !== '0000-00-00') {
+				$row->signondt = date("d M Y", strtotime($row->signondt));
+			} else {
+				$row->signondt = "-";
+			}
+
+			
+			if (!empty($row->signoffdt) && $row->signoffdt !== '0000-00-00') {
+				$row->signoffdt = date("d M Y", strtotime($row->signoffdt));
+			} else {
+				$row->signoffdt = "-";
+			}
+		}
+
 		echo json_encode($result);
 	}
 

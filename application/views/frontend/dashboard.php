@@ -956,7 +956,7 @@
             type: "POST",
             data: { signVsl: kodeKapal },
             beforeSend: function () {
-                $("#modalContent").html("<p>Loading data...</p>");
+                $("#modalContent").html("<p>Loading Data...</p>");
             },
             success: function (res) {
                 try {
@@ -970,7 +970,7 @@
                                     <th>Nama</th>
                                     <th>Rank</th>
                                     <th>Sign On</th>
-                                    <th>Sign Off</th>
+                                    <th>Est. Sign Off</th>
                                 </tr>
                             </thead>
                             <tbody>
