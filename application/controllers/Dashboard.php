@@ -1123,4 +1123,42 @@ class Dashboard extends CI_Controller {
 		echo json_encode($dataOut);
 	}
 
+	function crewOnboardDetailVessel()
+	{
+		$signVsl = $this->input->post('signVsl');   // nilai B.signonvsl
+
+		// Jika input kosong, handle supaya tidak error
+		if (empty($signVsl)) {
+			echo json_encode(array('error' => 'Kode kapal tidak ditemukan'));
+			return;
+		}
+
+
+		// Escape supaya aman dari injection
+		$whereSignVsl = $this->db->escape($signVsl);
+
+		$sql = "
+			SELECT 
+				B.signonvsl,
+				CONCAT_WS(' ', A.fname, A.mname, A.lname) AS fullname,
+				B.signondt,
+				B.signoffdt,
+				C.nmrank
+			FROM mstpersonal A
+			LEFT JOIN tblcontract B ON A.idperson = B.idperson
+			LEFT JOIN mstrank C ON B.signonrank = C.kdrank
+			WHERE 1=1
+				AND A.inaktif = '0'
+				AND B.deletests = '0'
+				AND B.signoffdt = '0000-00-00'
+				AND B.signonvsl = $whereSignVsl
+			ORDER BY fullname ASC
+		";
+
+		// Eksekusi query
+		$result = $this->MCrewscv->getDataQuery($sql);
+		echo json_encode($result);
+	}
+
+
 }

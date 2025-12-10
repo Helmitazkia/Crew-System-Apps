@@ -934,7 +934,79 @@
             });
         }
         loadRankContractExpiry();
+
+        $(document).on("click", ".vessel-link", function (e) {
+            e.preventDefault();
+
+            let kode = $(this).data("vessel-kode");
+            let nama = $(this).data("vessel-nama"); 
+            loadCrewDetail(kode, nama);
+        });
+
+
     });
+
+    function loadCrewDetail(kodeKapal, namaKapal) {
+        $("#modalDetailCrew .modal-title").text("Detail Crew Onboard - " + namaKapal);
+
+        $("#modalDetailCrew").modal("show");
+
+        $.ajax({
+            url: "<?php echo base_url('Dashboard/crewOnboardDetailVessel'); ?>",
+            type: "POST",
+            data: { signVsl: kodeKapal },
+            beforeSend: function () {
+                $("#modalContent").html("<p>Loading data...</p>");
+            },
+            success: function (res) {
+                try {
+                    let data = JSON.parse(res);
+
+                    let table = `
+                        <table class="table table-bordered table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th style="width:50px; text-align:center;">No</th>
+                                    <th>Nama</th>
+                                    <th>Rank</th>
+                                    <th>Sign On</th>
+                                    <th>Sign Off</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    data.forEach((row, idx) => {
+                        table += `
+                            <tr>
+                                <td style="text-align:center;">${idx + 1}</td>
+                                <td>${row.fullname}</td>
+                                <td>${row.nmrank}</td>
+                                <td>${row.signondt}</td>
+                                <td>${row.signoffdt}</td>
+                            </tr>
+                        `;
+                    });
+
+                    table += `
+                            </tbody>
+                        </table>
+                        <p style="font-weight:bold; font-size:16px;">
+                            Total Crew: ${data.length}
+                        </p>
+                    `;
+
+                    $("#modalContent").html(table);
+
+                } catch (err) {
+                    $("#modalContent").html("<p>Error parsing data</p>");
+                }
+            }
+        });
+    }
+    
+
+
 
 
     $(document).ready(function() {
@@ -1015,6 +1087,8 @@
             },
             dataType: "json",
             success: function(response) {
+
+                console.log(response);
                 if (!response || response.length === 0) {
                     alert('Data not found!');
                     return;
@@ -1033,7 +1107,11 @@
                     totalFemaleClient += parseInt(ship.total_female) || 0;
                     totalAgeSumClient += parseInt(ship.total_umur) || 0;
 
-                    vesselListClient.push(ship.nama_kapal);
+                    vesselListClient.push({
+                        kode: ship.kode_kapal,
+                        nama: ship.nama_kapal
+                    });
+
                 });
 
                 var avgAgeClient = totalCrewClient > 0 ? (totalAgeSumClient / totalCrewClient).toFixed(1) :
@@ -1045,18 +1123,32 @@
                 $("#txtTotalFemaleShipClient").text(totalFemaleClient);
 
                 var halfClient = Math.ceil(vesselListClient.length / 2);
+               
+                
                 $("#listKapalClient_1").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselListClient.slice(0, halfClient).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}' style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
+
                 $("#listKapalClient_2").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselListClient.slice(halfClient).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join("") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}'  style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
+
                 $("#idLoading").hide();
             },
             error: function(xhr, status, error) {
@@ -1111,7 +1203,10 @@
                     totalMale += parseInt(ship.total_male) || 0;
                     totalFemale += parseInt(ship.total_female) || 0;
                     totalAgeSum += parseInt(ship.total_umur) || 0;
-                    vesselList.push(ship.nama_kapal);
+                    vesselList.push({
+                        kode: ship.kode_kapal,
+                        nama: ship.nama_kapal
+                    });
                 });
 
                 var avgAge = totalCrew > 0 ? (totalAgeSum / totalCrew).toFixed(1) : 0;
@@ -1122,18 +1217,42 @@
                 $("#txtTotalFemale").text(totalFemale);
 
                 var half = Math.ceil(vesselList.length / 2);
-                $("#listKapal_1").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                // $("#listKapal_1").html(
+                //     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                //     vesselList.slice(0, half).map(vessel =>
+                //         `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
+                //         "") +
+                //     "</ul>"
+                // );
+                // $("#listKapal_2").html(
+                //     "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                //     vesselList.slice(half).map(vessel =>
+                //         `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
+                //         "") +
+                //     "</ul>"
+                // );
+
+                 $("#listKapal_1").html(
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselList.slice(0, half).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
-                        "") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}' style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
+
                 $("#listKapal_2").html(
-                    "<ul style='font-size: 18px; color: #000080; font-weight: bold;'>" +
+                    "<ul style='font-size: 18px; color: #000080; font-weight: bold; list-style:none; padding-left:0;'>" +
                     vesselList.slice(half).map(vessel =>
-                        `<li><i class='fa fa-ship'></i> ${vessel}</li>`).join(
-                        "") +
+                        `<li>
+                            <a href='#' class='vessel-link' data-vessel-kode='${vessel.kode}' data-vessel-nama='${vessel.nama}'  style='text-decoration:none; color:#000080;'>
+                                <i class='fa fa-ship'></i> ${vessel.nama}
+                            </a>
+                        </li>`
+                    ).join("") +
                     "</ul>"
                 );
                 $("#idLoading").hide();
@@ -1221,14 +1340,15 @@
 
   
     // Start Serach Data of Client Ship
-       
+
     $(document).ready(function() {
         const companyCheckboxes = $('input[name="NameCompanyOption[]"]').not('#selectAllNameCompanyOption');
         const selectAllCheckbox = $('#selectAllNameCompanyOption');
-        
+
         selectAllCheckbox.on('change', function() {
             const isChecked = $(this).prop('checked');
             companyCheckboxes.prop('checked', isChecked);
+            resetVesselSelectionDisplay();
             triggerLoadVessels();
         });
 
@@ -1236,11 +1356,28 @@
             const allAreChecked = companyCheckboxes.length === companyCheckboxes.filter(':checked').length;
             selectAllCheckbox.prop('checked', allAreChecked);
             triggerLoadVessels();
+            resetVesselSelectionDisplay();
         });
      
         
         triggerLoadVessels(); 
     });
+
+
+    function resetVesselSelectionDisplay() {
+        const vesselCheckboxContainer = $('#idCheckboxVesselClient');
+        const vesselSelectBox = $('#vesselSelect');
+
+        if (vesselSelectBox.length) {
+            vesselSelectBox.html('<option value="">- Select Vessel -</option>');
+        }
+        
+        if (vesselCheckboxContainer.length) {
+            vesselCheckboxContainer.html('<div style="padding: 10px; color: #666;">Select company first</div>');
+        }
+
+        vesselCheckboxContainer.val(''); 
+    }
 
     function triggerLoadVessels() {
         var selectedNameCompany = [];
@@ -1287,6 +1424,7 @@
         if (!selectedCompanies || selectedCompanies.length === 0) {
             // console.log("No companies selected");
             $('#idCheckboxVesselClient').html('<div style="padding: 10px; color: #666;">Select company first</div>');
+            $('#idCheckboxVesselClient').val('');
             return;
         }
         
@@ -1406,17 +1544,34 @@
             const isChecked = $(this).prop('checked');
             companyCheckboxes.prop('checked', isChecked);
             triggerLoadVesselsOwner();
+            resetVesselSelectionDisplayOwner();
         });
 
         companyCheckboxes.on('change', function() {
             const allAreChecked = companyCheckboxes.length === companyCheckboxes.filter(':checked').length;
             selectAllCheckbox.prop('checked', allAreChecked);
             triggerLoadVesselsOwner();
+            resetVesselSelectionDisplayOwner();
         });
      
         
         triggerLoadVesselsOwner(); 
     });
+
+    function resetVesselSelectionDisplayOwner() {
+        const vesselCheckboxContainer = $('#idCheckboxVesselOwnShip');
+        const vesselSelectBox = $('#vesselSelectOwner');
+
+        if (vesselSelectBox.length) {
+            vesselSelectBox.html('<option value="">- Select Vessel -</option>');
+        }
+        
+        if (vesselCheckboxContainer.length) {
+            vesselCheckboxContainer.html('<div style="padding: 10px; color: #666;">Select company first</div>');
+        }
+
+        vesselCheckboxContainer.val(''); 
+    }
 
     function triggerLoadVesselsOwner() {
         var selectedNameCompany = [];
@@ -1463,6 +1618,7 @@
         if (!selectedCompanies || selectedCompanies.length === 0) {
             // console.log("No companies selected");
             $('#idCheckboxVesselOwnShip').html('<div style="padding: 10px; color: #666;">Select company first</div>');
+            $('#idCheckboxVesselOwnShip').val('');
             return;
         }
         
@@ -2406,4 +2562,39 @@
             </div>
         </div>
     </div>
+</div>
+
+
+<!-- Modal Detail Crew -->
+<div class="modal fade" id="modalDetailCrew" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+
+      <!-- <div class="modal-header" style="background:#004080; color:white;">
+        <h5 class="modal-title">Detail Crew Onboard</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div> -->
+        <div class="modal-header" style="background:#004080; color:white; display:flex; align-items:center; justify-content:space-between;">
+            <!-- Title Center -->
+            <h5 class="modal-title" style="flex-grow:1; text-align:center; margin:0;color:white;"">
+               Detail Crew Onboard
+            </h5>
+
+            <!-- Button X (Right) -->
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:white; font-size:35px; opacity:1;">
+                <span aria-hidden="true">&times;</span>
+            </button>
+
+
+        </div>
+
+
+      <div class="modal-body">
+          <div id="modalContent"></div> 
+      </div>
+
+    </div>
+  </div>
 </div>
