@@ -661,6 +661,55 @@ class DataContext extends CI_Controller {
 		}
 	}
 
+	function getMstRankByOptionWithSelected($return = "", $selectedRankName = "")
+	{
+		$opt = "";
+
+		$rsl = $this->MCrewscv->getData("*","mstrank","deletests = '0'","nmrank ASC");
+		foreach ($rsl as $key => $val)
+		{
+			$selected = "";
+			if($val->nmrank == $selectedRankName)
+			{
+				$selected = " selected=\"selected\"";
+			}
+			$opt .= "<option value=\"".$val->kdrank."\"".$selected.">".$val->nmrank."</option>";
+		}
+
+		if($return == "")
+		{
+			return $opt;
+		}else{
+			print json_encode($opt);
+		}
+	}
+
+	function getMstVesselTypeByOptionWithSelected($return = "", $selectedvesselType = "")
+	{
+		$opt = "";
+
+		$whereNya = "deletests = '0' AND DefType IN ('Bulk Carrier', 'OIL TANKER', 'CHEMICAL TANKER', 'FLOATING CRANE', 'TUG BOAT')";
+		$rsl = $this->MCrewscv->getData("*","tbltype",$whereNya,"DefType ASC");
+		
+		foreach ($rsl as $key => $val)
+		{
+			$selected = "";
+			if($val->DefType == $selectedvesselType)
+			{
+				$selected = " selected=\"selected\"";
+			}
+			$opt .= "<option value=\"".$val->DefType."\"".$selected.">".$val->DefType."</option>";
+		}
+
+		if($return == "")
+		{
+			return $opt;
+		}else{
+			print json_encode($opt);
+		}
+	}
+
+
 	function getMenuGeneralByOption($idPerson = "",$ref1 = "",$ref2 = "")
 	{
 		$dataOut = array();

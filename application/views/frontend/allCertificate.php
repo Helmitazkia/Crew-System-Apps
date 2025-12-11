@@ -188,6 +188,7 @@ function exportPDF() {
                         <th style="vertical-align:middle;width:7%;text-align:center;">No</th>
                         <th style="vertical-align:middle;width:8%;text-align:center;">Display</th>
                         <th style="vertical-align:middle;width:60%;text-align:center;">Certificates Name</th>
+                        <th style="vertical-align:middle;width:10%;text-align:center;">Expired Certificates</th>
                         <th style="vertical-align:middle;width:20%;text-align:center;">Action</th>
                     </tr>
                 </thead>
@@ -198,7 +199,7 @@ function exportPDF() {
         </div>
     </div>
     <div class="col-md-6 col-xs-12">
-        <legend style="margin-bottom:10px;"><b><i>:: Certificate / Document ::</i></b></legend>
+        <legend style="margin-bottom:10px;"><b><i>:: Certificate / Document :: sfsdfsfsdf</i></b></legend>
         <div class="row">
             <div class="col-md-5 col-xs-12">
                 <input type="checkbox" id="chkUseThisAllCert" value="Y" checked="checked">
@@ -248,6 +249,7 @@ function exportPDF() {
                 </select>
             </div>
         </div>
+        
         <div class="row">
             <div class="col-md-4 col-xs-12">
                 <label for="slcRankAllCert">Rank :</label>
@@ -258,7 +260,6 @@ function exportPDF() {
             <div class="col-md-4 col-xs-12">
                 <label for="slcVesselTypeAllCert">Vessel Type :</label>
                 <select class="form-control input-sm" id="slcVesselTypeAllCert">
-                    <option value="-">-</option>
                     <?php echo $optType ?>
                     <!-- <option value="Pax" >Pax</option>
 					<option value="RoPax" >RoPax</option> -->

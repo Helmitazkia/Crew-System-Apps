@@ -1548,36 +1548,63 @@ class Personal extends CI_Controller {
 
 	function getPersonalDataAllCertificate($idPerson = "")
 	{
+
 		$dataContext = new DataContext();
 		$dataOut = array();
 		$trNya = "";
 		$no = 1;
+		$nameRank ="";
+		$crew_vessel_type ="";
 
-		$sql = "SELECT * FROM tblcertdoc WHERE idperson = '".$idPerson."' AND deletests = '0' ORDER BY certgroup,certname ASC ";
+		$sqlPersonal = "SELECT applyfor , crew_vessel_type FROM mstpersonal WHERE idperson = '".$idPerson."'";
+		$get_name_bypersonal = $this->MCrewscv->getDataQuery($sqlPersonal);
+		$nameRank = isset($get_name_bypersonal[0]) ? $get_name_bypersonal[0]->applyfor : "";
+		$crew_vessel_type = isset($get_name_bypersonal[0]) ? $get_name_bypersonal[0]->crew_vessel_type : "";
+
+		$sql = "SELECT * FROM tblcertdoc WHERE idperson = '".$idPerson."' AND deletests = '0' ORDER BY certgroup,certname ASC ";	
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
 		foreach ($rsl as $key => $val)
 		{
+
 			$certName = "(".$val->certgroup.") ".$val->certname;
 			$btnAct = "<button class=\"btn btn-info btn-xs\" title=\"Edit Data\" onclick=\"getDataEdit('".$val->idcertdoc."');\">Edit</button>";
 			$btnAct .= " <button class=\"btn btn-danger btn-xs\" title=\"Delete Data\" onclick=\"delData('".$val->idcertdoc."','".$val->idperson."');\">Del</button>";
 			$btnAct .= " <button class=\"btn btn-primary btn-xs\" title=\"View Data\" onclick=\"getDataEdit('".$val->idcertdoc."');\">View</button>";
 
-			$displayCek = "&nbsp;";
-			if($val->display == "Y")
-			{
-				$displayCek = "&radic;";
-			}
+		$displayCek = "&nbsp;";
+		if($val->display == "Y")
+		{
+			$displayCek = "&radic;";
+		}
 
-			if($val->certificate_file != "")
-			{
-				$certName = "<a href=\"".base_url('uploadCertificate')."/".$val->certificate_file."\" target=\"_blank\">".$certName."</a>";
-			}
+	
+		$expColor = ""; 
+		$exp = trim($val->expdate);
+		
+		if ($exp != "" && $exp != "0000-00-00" && strtotime($exp) !== false) {
+			$expTimestamp = strtotime($exp);
+			$now = strtotime(date('Y-m-d'));
+			$sixMonthsLater = strtotime('+6 months', $now);
+			
+			if ($expTimestamp < $now) {
+				$expColor = "color: red; font-weight: bold;";
+			} elseif ($expTimestamp < $sixMonthsLater) {
+				$expColor = "color: orange; font-weight: bold;";
+			}	
+			$expdate = date('d M Y', strtotime($exp));
+		} else {
+			$expdate = "";
+		}
 
-			$trNya .= "<tr>";
+		if($val->certificate_file != "")
+		{
+			$certName = "<a href=\"".base_url('uploadCertificate')."/".$val->certificate_file."\" target=\"_blank\" style=\"".$expColor."\">".$certName."</a>";
+		}			$trNya .= "<tr>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$no."</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$displayCek."</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\">".$certName."</td>";
+				$trNya .= "<td style=\"font-size:11px;padding:1px;\">" . $expdate . "</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$btnAct."</td>";
 			$trNya .= "</tr>";
 
@@ -1586,9 +1613,10 @@ class Personal extends CI_Controller {
 
 		$dataOut['trNya'] = $trNya;
 		$dataOut['optMstCert'] = $dataContext->getMstCertificateByOption("");
-		$dataOut['optRank'] = $dataContext->getMstRankByOption("");
+		$dataOut['optRank'] = $dataContext->getMstRankByOptionWithSelected("",$nameRank);
 		$dataOut['optCountry'] = $dataContext->getCountryByOption("","kode");
-		$dataOut['optType'] = $dataContext->getVesselTypeByOption("","kode");
+		// $dataOut['optType'] = $dataContext->getVesselTypeByOption("","kode");
+		$dataOut['optType'] = $dataContext->getMstVesselTypeByOptionWithSelected("",$crew_vessel_type);
 
 		$this->load->view('frontend/allCertificate',$dataOut);
 	}
