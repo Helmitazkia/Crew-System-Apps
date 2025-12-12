@@ -187,7 +187,7 @@ function exportPDF() {
                     <tr style="background-color:#067780;color:#FFF;height:30px;">
                         <th style="vertical-align:middle;width:7%;text-align:center;">No</th>
                         <th style="vertical-align:middle;width:8%;text-align:center;">Display</th>
-                        <th style="vertical-align:middle;width:60%;text-align:center;">Certificates Name</th>
+                        <th style="vertical-align:middle;width:50%;text-align:center;">Certificates Name</th>
                         <th style="vertical-align:middle;width:10%;text-align:center;">Expired Certificates</th>
                         <th style="vertical-align:middle;width:20%;text-align:center;">Action</th>
                     </tr>
@@ -199,7 +199,7 @@ function exportPDF() {
         </div>
     </div>
     <div class="col-md-6 col-xs-12">
-        <legend style="margin-bottom:10px;"><b><i>:: Certificate / Document :: sfsdfsfsdf</i></b></legend>
+        <legend style="margin-bottom:10px;"><b><i>:: Certificate / Document ::</i></b></legend>
         <div class="row">
             <div class="col-md-5 col-xs-12">
                 <input type="checkbox" id="chkUseThisAllCert" value="Y" checked="checked">

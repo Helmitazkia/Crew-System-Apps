@@ -1600,10 +1600,10 @@ class Personal extends CI_Controller {
 		if($val->certificate_file != "")
 		{
 			$certName = "<a href=\"".base_url('uploadCertificate')."/".$val->certificate_file."\" target=\"_blank\" style=\"".$expColor."\">".$certName."</a>";
-		}			$trNya .= "<tr>";
+	}			$trNya .= "<tr>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$no."</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$displayCek."</td>";
-				$trNya .= "<td style=\"font-size:11px;padding:1px;\">".$certName."</td>";
+				$trNya .= "<td style=\"font-size:11px;padding:1px;\"><div style=\"white-space:normal; word-wrap:break-word; word-break:break-word;\">".$certName."</div></td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\">" . $expdate . "</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$btnAct."</td>";
 			$trNya .= "</tr>";
