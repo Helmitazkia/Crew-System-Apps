@@ -30,6 +30,9 @@ function saveData() {
         certDisplay = $("#chkDisplayAllCert").val();
     }
 
+    // console.log(rankName,slcVesselType);
+    // return false;
+
     formData.append('idEdit', idEdit);
     formData.append('idPerson', idPerson);
     formData.append('useThisAll', useThisAll);
@@ -52,6 +55,9 @@ function saveData() {
 
     formData.append('cekFileUpload', fileUpload);
     formData.append('fileUpload', $("#uploadFile").prop('files')[0]);
+
+    // console.log(formData);
+    // return false;
 
     $("#idLoadingForm").show();
     $.ajax("<?php echo base_url('personal/saveAllCertificate'); ?>", {
@@ -92,10 +98,25 @@ function getDataEdit(id) {
                 $("#chkDisplayAllCert").prop('checked', false);
             }
 
-            $("#slcMstCertAllCert").val(data[0].kdcert);
+            if (slcMstCertAllCert) {
+                slcMstCertAllCert.setValue(data[0].kdcert);
+            } else {
+                $("#slcMstCertAllCert").val(data[0].kdcert);
+            }
+
+            if (slcRankAllCert) {
+                slcRankAllCert.setValue(data[0].kdrank);
+            } else {
+                $("#slcRankAllCert").val(data[0].kdrank);
+            }
+            
+            if (slcVesselTypeAllCert) {
+                slcVesselTypeAllCert.setValue(data[0].vsltype);
+            } else {
+                $("#slcVesselTypeAllCert").val(data[0].vsltype);
+            }
+
             $("#slcLicenseAllCert").val(data[0].license);
-            $("#slcLevelAllCert").val(data[0].level);
-            $("#slcRankAllCert").val(data[0].kdrank);
             $("#slcVesselTypeAllCert").val(data[0].vsltype);
             $("#slcCountryIssueAllCert").val(data[0].kdnegara);
             $("#txtNoDocumentAllCert").val(data[0].docno);
@@ -161,6 +182,28 @@ function delData(id, idPerson) {
     }
 }
 
+    var slcRankAllCert;
+    var slcVesselTypeAllCert;
+    var slcMstCertAllCert;
+
+    $(document).ready(function () {  
+        slcRankAllCert = new TomSelect("#slcRankAllCert", {
+            create: false,
+            searchField: ["text"]
+        });
+
+        slcVesselTypeAllCert = new TomSelect("#slcVesselTypeAllCert", {
+            create: false,
+            searchField: ["text"]
+        });
+
+        slcMstCertAllCert = new TomSelect("#slcMstCertAllCert", {
+            create: false,
+            searchField: ["text"]
+        });
+
+    });
+
 function exportPDF() {
     var idPerson = $("#txtIdPersonAllCertificate").val();
     window.open("<?php echo base_url('personal/exportPDFCertificate/'); ?>" + '/' + idPerson, '_blank');
@@ -207,7 +250,11 @@ function exportPDF() {
             </div>
             <div class="col-md-7 col-xs-12">
                 <label for="slcMstCertAllCert">Certificate Name :</label>
-                <select class="form-control input-sm" id="slcMstCertAllCert">
+                <!-- <select class="form-control input-sm" id="slcMstCertAllCert">
+                    <?php echo $optMstCert; ?>
+                </select> -->
+                <select id="slcMstCertAllCert" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px;
+                    background:#f9fafb; font-size:14px;">
                     <?php echo $optMstCert; ?>
                 </select>
             </div>
@@ -253,24 +300,30 @@ function exportPDF() {
         <div class="row">
             <div class="col-md-4 col-xs-12">
                 <label for="slcRankAllCert">Rank :</label>
-                <select class="form-control input-sm" id="slcRankAllCert">
+                <!-- <select class="form-control input-sm" id="slcRankAllCert">
+                    <?php echo $optRank; ?>
+                </select> -->
+                <select  id="slcRankAllCert" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px;
+                    background:#f9fafb; font-size:14px;">
                     <?php echo $optRank; ?>
                 </select>
             </div>
             <div class="col-md-4 col-xs-12">
                 <label for="slcVesselTypeAllCert">Vessel Type :</label>
-                <select class="form-control input-sm" id="slcVesselTypeAllCert">
+                <!-- <select class="form-control" class="form-control input-sm" id="slcVesselTypeAllCert">
                     <?php echo $optType ?>
-                    <!-- <option value="Pax" >Pax</option>
-					<option value="RoPax" >RoPax</option> -->
+                </select> -->
+                <select  id="slcVesselTypeAllCert" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px;
+                    background:#f9fafb; font-size:14px;">
+                    <?php echo $optType; ?>
                 </select>
             </div>
-            <div class="col-md-4 col-xs-12">
+            <!-- <div class="col-md-4 col-xs-12">
                 <label for="slcCountryIssueAllCert">Country of Issue :</label>
                 <select class="form-control input-sm" id="slcCountryIssueAllCert">
                     <?php echo $optCountry; ?>
                 </select>
-            </div>
+            </div> -->
         </div>
         <div class="row">
             <div class="col-md-4 col-xs-12">

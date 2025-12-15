@@ -21,6 +21,9 @@ class Contract extends CI_Controller {
 		$no =1;
 		$whereNya = "";
 		$keyNo = 0;
+
+		$Will_expired_Count = 0;
+		$finish_expired_count =0;
 		
 		if($search != "")
 		{
@@ -115,30 +118,34 @@ class Contract extends CI_Controller {
 
 						if($dateNow > $val['estsignoffdt'])
 						{
-							$bintang = "<span style=\"font-weight:bold;font-size:12px;color:red;\">**</span>";
-
+							$bintang = "<span style=\"font-weight:bold;font-size:12px;color:red;font-weight: bold;\">**</span>";
+							$finish_expired_count++;
 							$warning = $dataContext->hitungSelisihCompleteByHari($dateNow,$val['estsignoffdt']);
-							$warning = "<br><span style=\"font-size:10px;color:red;\">Expired over ".$warning."</span>";
+							$warning = "<br><span style=\"font-size:10px;color:red;font-weight: bold;\">Expired over ".$warning."</span>";
 						}
 
 						if($val['kdcmprec'] == "001")
 						{
 							if($dateNow >= $satuBlnKeBelakang AND $dateNow <= $val['estsignoffdt'])
 							{
+								$Will_expired_Count++;
 								$warning = $dataContext->hitungSelisihCompleteByHari($dateNow,$val['estsignoffdt']);
-								$warning = "<br><span style=\"font-size:10px;color:red;\">Expired In ".$warning."</span>";
+								$warning = "<br><span style=\"font-size:10px;color:red;font-weight: bold;\">Expired In ".$warning."</span>";
 
-								$bintang = "<span style=\"font-weight:bold;font-size:12px;color:red;\">*</span>";
+								$bintang = "<span style=\"font-weight:bold;font-size:12px;color:red;font-weight: bold;\">*</span>";
 							}
 						}else{
 							if($dateNow >= $tigaBlnKeBelakang AND $dateNow <= $val['estsignoffdt'])
 							{
+								$Will_expired_Count++;
 								$warning = $dataContext->hitungSelisihCompleteByHari($dateNow,$val['estsignoffdt']);
-								$warning = "<br><span style=\"font-size:10px;color:blue;\">Expired In ".$warning."</span>";
+								$warning = "<br><span style=\"font-size:10px;color:orange;font-weight: bold;\">Expired In ".$warning."</span>";
 
-								$bintang = "<span style=\"font-weight:bold;font-size:12px;color:red;\">*</span>";
+								$bintang = "<span style=\"font-weight:bold;font-size:12px;color:red;font-weight: bold;\">*</span>";
 							}
 						}
+
+						// var_dump($val['certName']['OTCBHS']);exit;
 
 						$tempTr .= "<tr>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;background-color:#5bc0de;\">".$no."</td>";
@@ -154,10 +161,68 @@ class Contract extends CI_Controller {
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateSeaman']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDatePassport']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDatePassport']."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['SSBTT']."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['OTCBHS']."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['CTCBHS']."</td>";
-							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['ERST']."</td>";
+							// $tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['SSBTT']."</td>";
+							// SSBT (2 kolom - PERUBAHAN DI SINI)
+
+							// Ambil string lengkap SSBTT
+							$ssbtt = $val['certName']['SSBTT'];  
+							// Contoh isinya: "Iss. Date: 27 Sep 2024, Exp. Date: 27 Sep 2029"
+
+							// Regex untuk ambil Iss Date
+							preg_match('/Iss\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $ssbtt, $m1);
+
+							// Regex untuk ambil Exp Date
+							preg_match('/Exp\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $ssbtt, $m2);
+
+							// Simpan ke array
+							$val['certName']['issDateSSBT'] = isset($m1[1]) ? $m1[1] : '';
+							$val['certName']['expDateSSBT'] = isset($m2[1]) ? $m2[1] : '';
+
+							
+							//Lanjut generate tabel
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDateSSBT']."</td>";  // Iss Date SSBT
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateSSBT']."</td>";  // Exp Date SSBT
+
+							//$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['OTCBHS']."</td>";
+							$otcbhs = $val['certName']['OTCBHS'];  
+
+							preg_match('/Iss\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $otcbhs, $m1);
+							preg_match('/Exp\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $otcbhs, $m2);
+
+							$val['certName']['issDateOTCBHS'] = isset($m1[1]) ? $m1[1] : '';
+							$val['certName']['expDateOTCBHS'] = isset($m2[1]) ? $m2[1] : '';
+
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDateOTCBHS']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateOTCBHS']."</td>";
+
+
+							// $tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['CTCBHS']."</td>";
+							$ctcbhs = $val['certName']['CTCBHS'];  
+
+							preg_match('/Iss\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $ctcbhs, $m1);
+							preg_match('/Exp\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $ctcbhs, $m2);
+
+							$val['certName']['issDateCTCBHS'] = isset($m1[1]) ? $m1[1] : '';
+							$val['certName']['expDateCTCBHS'] = isset($m2[1]) ? $m2[1] : '';
+
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDateCTCBHS']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateCTCBHS']."</td>";
+ 
+
+						
+							// $tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['ERST']."</td>";
+							$erst = $val['certName']['ERST'];  
+
+							preg_match('/Iss\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $erst, $m1);
+							preg_match('/Exp\. Date:\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+[0-9]{4})/', $erst, $m2);
+
+							$val['certName']['issDateERST'] = isset($m1[1]) ? $m1[1] : '';
+							$val['certName']['expDateERST'] = isset($m2[1]) ? $m2[1] : '';
+
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['issDateERST']."</td>";
+							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:center;\">".$val['certName']['expDateERST']."</td>";
+
+
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:left;\">".$val['certName']['certPanama']."</td>";
 							$tempTr .= "<td style=\"background-color:#D7EAEC;font-size:11px;text-align:left;\">".$val['certName']['certOther']."</td>";
 
@@ -170,9 +235,10 @@ class Contract extends CI_Controller {
 				}
 
 				$trNya .= "<tr>";
-					$trNya .= "<td style=\"background-color:#5bc0de;\" colspan=\"20\">";
+					$trNya .= "<td style=\"background-color:#5bc0de;\" colspan=\"40\">";
 						$trNya .= "<b><i>:: ON BOARD ::</i> ( ".number_format($no-1,0)." Data ) || </b>";
-						$trNya .= "<label style=\"color:#E10303;\">* (Will expire), ** (Over due)</label>";
+						// $trNya .= "<label style=\"color:#E10303;\">* (Will expire), ** (Over due)</label>";
+						$trNya .= "<label style=\"color:#E10303;\">* (Will Expire - ".$Will_expired_Count." Person), ** (Over Due - ".$finish_expired_count." Person)</label>";
 					$trNya .= "</td>";
 				$trNya .= "</tr>";
 				$trNya .= $tempTr;
@@ -366,7 +432,7 @@ class Contract extends CI_Controller {
 			}			
 			
 		}else{
-			$trNya = "<tr><td style=\"text-align:center;font-weight:bold;\" colspan=\"20\">- Select Status -</td></tr>";
+			$trNya = "<tr><td style=\"text-align:center;font-weight:bold;\" colspan=\"40\">- Select Status -</td></tr>";
 		}
 
 		$dataOut['trNya'] = $trNya;
@@ -699,11 +765,46 @@ class Contract extends CI_Controller {
 
 			foreach ($rsl as $key => $val)
 			{
+
+				$expColor = ""; 
+				$exp = trim($val->expdate);
+				
+				if ($exp != "" && $exp != "0000-00-00" && strtotime($exp) !== false) {
+					$expTimestamp = strtotime($exp);
+					$now = strtotime(date('Y-m-d'));
+					$sixMonthsLater = strtotime('+6 months', $now);
+					
+					if ($expTimestamp < $now) {
+						$expColor = "color: red; font-weight: bold;";
+					} elseif ($expTimestamp < $sixMonthsLater) {
+						$expColor = "color: orange; font-weight: bold;";
+					}	
+					$expdate = date('d M Y', strtotime($exp));
+				} else {
+					$expdate = "";
+				}
+
+				if($val->certificate_file != "")
+				{
+					$certName = "<a href=\"".base_url('uploadCertificate')."/".$val->certificate_file."\" target=\"_blank\" style=\"".$expColor."\">".$val->certname."</a>";
+				}	
+
+
 				$btnAct = "<button class=\"btn btn-primary btn-xs btn-block\" title=\"View Document\" onclick=\"viewDocumentDetail('".$val->idcertdoc."');\"><i class=\"fa fa-eye\"></i> View</button>";
 				$trNya .= "<tr>";
 					$trNya .= "<td style=\"font-size:10px;text-align:center;\">".$no."</td>";
 					$trNya .= "<td style=\"font-size:10px;\">".$val->certgroup."</td>";
-					$trNya .= "<td style=\"font-size:10px;\">".$val->certname."</td>";
+					$trNya .= "<td style=\"font-size:10px;\">".$certName."</td>";
+					$issFormatted = "";
+					if(trim($val->issdate) != "" && substr(trim($val->issdate),0,10) != "0000-00-00" && strtotime($val->issdate) !== false) {
+						$issFormatted = date('d M Y', strtotime($val->issdate));
+					}
+					$trNya .= "<td style=\"font-size:10px;\">".$issFormatted."</td>";
+						$expFormatted = "";
+					if(trim($val->expdate) != "" && substr(trim($val->expdate),0,10) != "0000-00-00" && strtotime($val->expdate) !== false) {
+						$expFormatted = date('d M Y', strtotime($val->expdate));
+					}
+				$trNya .= "<td style=\"font-size:10px;\">".$expFormatted."</td>";
 					$trNya .= "<td style=\"font-size:10px;\">".$btnAct."</td>";
 				$trNya .= "</tr>";
 
@@ -892,6 +993,7 @@ class Contract extends CI_Controller {
 	}
 
 	function getcertificateByUser($idPerson) {
+		
 		$dataContext = new DataContext();
 		$dataOut = array();
 		$tempData = array();
@@ -1103,7 +1205,7 @@ class Contract extends CI_Controller {
 				$no++;
 			}
 
-			$trNya .= "<tr><td colspan=\"11\" style=\"height:25px; padding-left:10px;border:1px solid black;\"><b><i>:: NOT FOR EMPLOYEE ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
+			$trNya .= "<tr><td colspan=\"40\" style=\"height:25px; padding-left:10px;border:1px solid black;\"><b><i>:: NOT FOR EMPLOYEE ::</i> ( ".number_format($no-1,0)." Data ) </b></td></tr>";
 			$trNya .= $tempTr;
 		}
 		if($status == "onboard"  OR $status == "all")
@@ -1167,7 +1269,7 @@ class Contract extends CI_Controller {
 			}
 
 			$trNya .= "<tr>";
-				$trNya .= "<td colspan=\"11\" style=\"height:25px; padding-left:10px;border:1px solid black;\">";
+				$trNya .= "<td colspan=\"40\" style=\"height:25px; padding-left:10px;border:1px solid black;\">";
 					$trNya .= "<b><i>:: ON BOARD ::</i> ( ".number_format($no-1,0)." Data ) || </b>";
 					$trNya .= "<label>* (Will expire), ** (Over due)</label>";
 				$trNya .= "</td>";

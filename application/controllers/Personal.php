@@ -1548,7 +1548,7 @@ class Personal extends CI_Controller {
 
 	function getPersonalDataAllCertificate($idPerson = "")
 	{
-
+	
 		$dataContext = new DataContext();
 		$dataOut = array();
 		$trNya = "";
@@ -1600,7 +1600,8 @@ class Personal extends CI_Controller {
 		if($val->certificate_file != "")
 		{
 			$certName = "<a href=\"".base_url('uploadCertificate')."/".$val->certificate_file."\" target=\"_blank\" style=\"".$expColor."\">".$certName."</a>";
-	}			$trNya .= "<tr>";
+		}			
+			$trNya .= "<tr>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$no."</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\" align=\"center\">".$displayCek."</td>";
 				$trNya .= "<td style=\"font-size:11px;padding:1px;\"><div style=\"white-space:normal; word-wrap:break-word; word-break:break-word;\">".$certName."</div></td>";
@@ -1617,7 +1618,8 @@ class Personal extends CI_Controller {
 		$dataOut['optCountry'] = $dataContext->getCountryByOption("","kode");
 		// $dataOut['optType'] = $dataContext->getVesselTypeByOption("","kode");
 		$dataOut['optType'] = $dataContext->getMstVesselTypeByOptionWithSelected("",$crew_vessel_type);
-
+	
+		// var_dump($dataOut['optRank']);
 		$this->load->view('frontend/allCertificate',$dataOut);
 	}
 

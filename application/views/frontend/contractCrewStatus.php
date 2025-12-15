@@ -77,7 +77,9 @@
                 $("#slcReplacementCont").append(data.optReplacement);
 
                 $("#teksJudulName").text(data.fullName);
-                $("#btnIdBackCrewCont").attr("onclick", "searchData('" + status + "');");
+                //$("#btnIdBackCrewCont").attr("onclick", "searchData('" + status + "');");
+                $("#btnIdBackCrewCont").attr("onclick", "searchData(\"" + status + "\")");
+
 
                 $("#txtStatusContract").val(status);
                 $("#idDataTableCont").hide();
@@ -133,6 +135,8 @@
     function searchData(statusNya) {
         var status = $("#slcSearchStatus").val();
 
+        console.log(statusNya,"statusNya")
+        console.log(status,"status")
         if (statusNya != "") {
             status = statusNya;
             $("#slcSearchStatus").val(statusNya);
@@ -790,7 +794,7 @@
                 </div>
             </legend>
             <div class="row">
-                <div class="col-md-6 col-xs-12">
+                <div class="col-md-5 col-xs-12">
                     <div class="table-responsive">
                         <table
                             class="table table-border table-striped table-bordered table-condensed table-advance table-hover"
@@ -799,8 +803,10 @@
                                 <tr style="background-color:#067780;color:#FFF;height:30px;">
                                     <th style="vertical-align:middle;width:7%;text-align:center;">No</th>
                                     <th style="vertical-align:middle;width:10%;text-align:center;">Group</th>
-                                    <th style="vertical-align:middle;width:70%;text-align:center;">Certificates Name
+                                    <th style="vertical-align:middle;width:50%;text-align:center;">Certificates Name
                                     </th>
+                                    <th style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                    <th style="vertical-align:middle;width:20%;text-align:center;">Expired Date</th>
                                     <th style="vertical-align:middle;width:13%;text-align:center;">Action</th>
                                 </tr>
                             </thead>
@@ -809,7 +815,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="col-md-6 col-xs-12">
+                <div class="col-md-7 col-xs-12">
                     <div class="row">
                         <div class="col-md-12 col-xs-12">
                             <div class="row">
@@ -1058,17 +1064,17 @@
                                                 colspan="2">Seaman Book</th>
                                             <th id="colPassport" style="vertical-align:middle;text-align:center;"
                                                 colspan="2">Passport</th>
-                                            <th id="colSSBT" style="width:10%;vertical-align:middle;text-align:center;"
-                                                rowspan="2">
-                                                SSBT</th>
+                                            <th id="colSSBT" style="width:10%;vertical-align:middle;text-align:center;" colspan="2">
+                                                SSBT
+                                            </th>
                                             <th id="colOTCBHS"
-                                                style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                                style="width:10%;vertical-align:middle;text-align:center;" colspan="2">
                                                 OTCBHS</th>
                                             <th id="colCTCBHS"
-                                                style="width:10%;vertical-align:middle;text-align:center;" rowspan="2">
+                                                style="width:10%;vertical-align:middle;text-align:center;"  colspan="2">
                                                 CTCBHS</th>
                                             <th id="colERST" style="width:10%;vertical-align:middle;text-align:center;"
-                                                rowspan="2">
+                                                 colspan="2">
                                                 ERST</th>
                                             <th id="colEndorsement" style="vertical-align:middle;text-align:center;"
                                                 colspan="2">Endorsement</th>
@@ -1078,9 +1084,22 @@
                                         <tr style="background-color:#067780;color:#FFF;height:30px;">
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
-                                            <th style="vertical-align:middle;width:20%;text-align:center;">Exp Date
-                                            </th>
+                                            <th style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+                                            <!-- SSBT -->
+                                            <th id="colSSBT" style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                            <th id="colSSBT" style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+                                            <!-- OTCBHS -->
+                                            <th id="colOTCBHS" style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                            <th  id="colOTCBHS" style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+                                            <!-- CTCBHS -->
+                                            <th id="colCTCBHS" style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                            <th  id="colCTCBHS"  style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+                                               <!-- CTCBHS -->
+                                            <th id="colCTCBHS" style="vertical-align:middle;width:20%;text-align:center;">Iss Date</th>
+                                            <th id="colCTCBHS" style="vertical-align:middle;width:20%;text-align:center;">Exp Date</th>
+                                            <!-- Endorsement -->
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Panama</th>
                                             <th style="vertical-align:middle;width:20%;text-align:center;">Other</th>
                                         </tr>
