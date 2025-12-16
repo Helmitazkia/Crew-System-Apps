@@ -644,6 +644,7 @@
         });
     }
 
+    
     $(document).ready(function() {
 
         function refreshReleaseMinusButton() {
@@ -1977,6 +1978,19 @@
         });
     }
 
+    function listApproval() {
+        $("#modalApproval").modal("show");
+
+        $.ajax({
+            url: "<?php echo base_url('report/getDataApproval'); ?>",
+            type: "POST",
+            dataType: "json",
+            success: function(res) {
+                $("#tbApprovalBody").html(res);
+            }
+        });
+    }
+
     function renderApplicantPieChart(data) {
         data.sort((a, b) => b.y - a.y);
 
@@ -2060,6 +2074,9 @@
                 pickup,
                 not_position,
                 not_qualified_total,
+                not_qualified_experience,
+                not_qualified_certificate,
+                not_qualified_interview,
                 not_reference_total,
                 interview,
                 mcu
@@ -2069,35 +2086,36 @@
                 not_reference_total +
                 interview + mcu;
 
+
             const scaleFactor = totalDrill > 0 ? y / totalDrill : 1;
 
             const drillData = [{
                     name: 'Qualified',
-                    y: Math.round(qualified * scaleFactor)
+                    y: Math.round(qualified)
                 },
                 {
                     name: 'PickUp',
-                    y: Math.round(pickup * scaleFactor)
+                    y: Math.round(pickup)
                 },
                 {
                     name: 'No Position',
-                    y: Math.round(not_position * scaleFactor)
+                    y: Math.round(not_position)
                 },
                 {
                     name: 'Not Qualified Certificate',
-                    y: Math.round(not_qualified_total * scaleFactor)
+                    y: Math.round(not_qualified_total)
                 },
                 {
                     name: 'Not Qualified Interview',
-                    y: Math.round(not_reference_total * scaleFactor)
+                    y: Math.round(not_reference_total)
                 },
                 {
                     name: 'Interview',
-                    y: Math.round(interview * scaleFactor)
+                    y: Math.round(interview)
                 },
                 {
                     name: 'MCU',
-                    y: Math.round(mcu * scaleFactor)
+                    y: Math.round(mcu)
                 }
             ];
 
@@ -2794,6 +2812,7 @@
     }
 
     function searchTable(inputElement, dataType) {
+        console.log("test ini");
         const searchValue = inputElement.value.toLowerCase();
         let container = null;
         let table = null;
@@ -3732,8 +3751,138 @@
             reasonDiv.style.display = 'none';
         }
     }
+
+    function click_form_mlc() {
+        var get_idperson = $("#txtIdPerson").val();
+
+        if (!get_idperson) {
+            alert("Id Person Kosong!");
+            return;
+        }
+
+        $("#modal-form-mlc").modal("show");
+        // console.log("ID Person:", get_idperson);
+
+        $.ajax({
+            url: "<?php echo base_url('report/get_data_form_mlc'); ?>",
+            type: "POST",
+            data: { idperson: get_idperson },
+            dataType: "json",
+            success: function (res) {
+                if (!res.success || !res.data || res.data.length === 0) {
+                    alert("Data tidak ditemukan!");
+                    return;
+                }
+
+                var data = res.data[0];
+                $("#name-crew-mlc").text(data.fullname || "-");
+                $("#jabatan-crew-mlc").text(data.nmrank || "-");
+                $("#date-crew-mlc").text(data.signondt || "-");
+                $("#vessel-crew-mlc").text(data.nmvsl || "-");
+            },
+            error: function (xhr, status, error) {
+                console.log("AJAX Error:", error);
+                alert("Error fetching data.");
+            }
+        });
+    }
+
     </script>
 </head>
+
+
+<style>
+    .long-line {
+
+        width: 100%;
+        border-bottom: 1px solid #000;
+
+    }
+
+    .statement-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .statement-table th,
+    .statement-table td {
+        border: 1px solid #000;
+        padding: 6px;
+        vertical-align: top;
+    }
+
+    .statement-table th {
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .col-no {
+        width: 40px;
+        text-align: center;
+    }
+
+    .col-statement {
+        width: auto;
+        text-align: left;
+    }
+
+    .col-yes,
+    .col-no-check {
+        width: 70px;
+        text-align: center;
+    }
+
+    .check-box {
+        width: 18px;
+        height: 18px;
+        border: 1.5px solid #000;
+        display: inline-block;
+    }
+
+    .subtext {
+        font-style: italic;
+        font-size: 12px;
+        margin-top: 3px;
+    }
+
+    .remarks-title {
+        font-size: 13px;
+        margin: 8px 0 4px 0;
+    }
+
+    .remarks-box {
+        width: 100%;
+        height: 70px;
+        border: 1px solid #000;
+        margin-bottom: 14px;
+    }
+
+    .sign-container {
+        display: flex;
+        gap: 20px;
+        /* Jarak antar box */
+        margin-top: 10px;
+    }
+
+    .sign-table-wrapper {
+        flex: 1;
+    }
+
+    .sign-grid {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .sign-box {
+        border: 1px solid #000;
+        height: 90px;
+        vertical-align: bottom;
+        padding-bottom: 8px;
+    }
+</style>
 
 <body>
 
@@ -3815,7 +3964,7 @@
                                 <div class="col-md-3">
                                     <button class="btn btn-primary btn-sm btn-block" title="Cetak"
                                         onclick="printDataPrincipal();" id="btnPrintPrincipal">
-                                        <i class="fa fa-print"></i> PRINT CV REPORT
+                                        <i class="fa fa-print"></i> PRINT
                                     </button>
                                 </div>
                                 <div class="col-md-3">
@@ -3900,6 +4049,18 @@
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakSeafarerContract();" id="btnIntroductionCrew">
                                         <i class="fa fa-print"></i> Print Seafarer Contract Suntechno
+                                    </button>
+                                </div>
+                                <div class="col-md-3" style="margin-top: 10px;">
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak"
+                                        onclick="listApproval();" id="btnIntroductionCrew">
+                                        <i class="fa fa-list"></i> Approval Evaluation
+                                    </button>
+                                </div>
+                                <div class="col-md-3" style="margin-top: 10px;">
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak"
+                                        onclick="click_form_mlc();" id="btnIntroductionCrew">
+                                        <i class="fa fa-print"></i> Print Form MLC
                                     </button>
                                 </div>
                             </div>
@@ -8582,6 +8743,315 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalApproval" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
 
+            <div class="modal-header" style="background-color:#067780;  color:white;">
+                <h4 class="modal-title" style="color:white;">Approval Evaluation List</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="color:white;">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" style="font-size:15xpx;">
+                        <thead style="background-color:#067780;color:white;">
+                            <tr>
+                                <th rowspan="2" style="text-align:center;">No</th>
+                                <th rowspan="2" style="text-align:center;">Crew Name</th>
+                                <th rowspan="2" style="text-align:center;">Rank</th>
+                                <th colspan="3" style="text-align:center;">Date</th>
+                                <th colspan="4" style="text-align:center;">Approve</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align:center;">Date Of Evaluation</th>
+                                <th style="text-align:center;">Report Periode From</th>
+                                <th style="text-align:center;">Report Periode To</th>
+                                <th style="text-align:center;">Chief</th>
+                                <th style="text-align:center;">Master</th>
+                                <th style="text-align:center;">OS</th>
+                                <th style="text-align:center;">Crewing</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbApprovalBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<body>
+    <div class="modal fade" id="modal-form-mlc" tabindex="-1">
+        <div class="modal-dialog modal-lg" style="max-width:850px;">
+            <div class="modal-content"
+                style="border:1px solid #000; border-radius:6px; padding:25px; font-family:'Times New Roman', serif;">
+
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="width:90px; vertical-align:top;">
+                            <img src="<?php echo base_url('assets/img/Logo_Andhika_2017.jpg'); ?>" style="width:80px;">
+                        </td>
+
+                        <td style="text-align:center; vertical-align:middle;">
+                            <br>
+                            <div style="font-size:12px; font-weight:bold;margin-top:20px;margin-left:70px;">MLC
+                                DECLARATION FORM</div>
+                            <div class="long-line-header"
+                                style="width: 36%;border-bottom: 1px solid #000;margin-left:205px;"></div>
+                            <div style="font-size:15px; font-weight:bold; margin-top:1px;margin-left:70px;">FORM
+                                PERNYATAAN MLC</div>
+                            <br>
+                        </td>
+
+                        <td style="width:170px; text-align:right; vertical-align:top;">
+                            <div style="font-size:11px; font-weight:bold;">SRPS LICENSE NO:</div>
+                            <div style="font-size:10px;">SIUPPAK 12.12 Tahun 2014</div>
+                            <div style="margin-top:5px;">
+                                <img src="<?php echo base_url('assets/img/Bureau_Veritas_Logo.jpg'); ?>"
+                                    style="width:60px; margin-right:3px;">
+                                <img src="<?php echo base_url('assets/img/Iso.jpg'); ?>" style="width:60px;">
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <table class="statement-table">
+                    <tr>
+                        <th class="col-no">No</th>
+                        <th class="col-statement">Statement</th>
+                        <th class="col-yes">Yes<br>Ya</th>
+                        <th class="col-no-check">No<br>Tidak</th>
+                    </tr>
+                    <tr>
+                        <td class="col-no">1</td>
+                        <td class="col-statement">
+                            All items contained in my employment contract have been explained to me and I am aware of
+                            them.
+                            <div class="subtext">
+                                Semua hal yang terdapat dalam kontrak kerja saya telah dijelaskan kepada saya dan saya
+                                memahaminya.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+                    <tr>
+                        <td class="col-no">2</td>
+                        <td class="col-statement">
+                            A full sample agreement incorporating all terms and conditions to apply (including the CBA)
+                            has been provided to me prior to entering the agreement.
+                            <div class="subtext">
+                                Contoh perjanjian yang lengkap yang menggabungkan semua ketentuan dan persyaratan
+                                melamar (termasuk Kontrak Kerja Bersama) telah diberikan kepada saya sebelum memulai
+                                perjanjian ini.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+                    <tr>
+                        <td class="col-no">3</td>
+                        <td class="col-statement">
+                            I was given adequate time to review the contract and seek advice on the terms and conditions
+                            in the agreement.
+                            <div class="subtext">
+                                Saya diberikan waktu yang mencukupi untuk memeriksa kontrak dan meminta nasihat mengenai
+                                ketentuan dan persyaratan dalam perjanjian tersebut..
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+                    <tr>
+                        <td class="col-no">4</td>
+                        <td class="col-statement">
+                            I freely entered into the agreement with a suficient understanding of my rights and
+                            responsibilities.
+                            <div class="subtext">
+                                Saya bebas mengadakan perjanjian dengan pemahaman yang memadai mengenai hak dan
+                                tanggungjawab saya.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-no">5</td>
+                        <td class="col-statement">
+                            I was given an original set of my Seafarers Employment Agreement, which I must carry with me
+                            on board.
+                            <div class="subtext">
+                                Saya diberikan satu berkas Perjanjian Kerja Pelaut yang asli, yang saya harus bawa di
+                                atas kapal.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-no">6</td>
+                        <td class="col-statement">
+                            No fees or other charges for my recruitment or placement or for providing employment to me
+                            have incurred directly or indirectly, in whole or part.
+                            <div class="subtext">
+                                Tidak diadakan biaya maupun beban lainnya untuk perekrutan dan penempatan saya atau
+                                untuk memberikan pekerjaan kepada saya secara langsung atau tidak langsung, secara
+                                keseluruhan atau sebagian.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-no">7</td>
+                        <td class="col-statement">
+                            No joining advances or any other exploitation incurred with regard to the employment.
+                            <div class="subtext">
+                                Tidak ada biaya untuk bergabung ataupun eksploitasi lainnya sehubungan dengan pekerjaan
+                                tersebut.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-no">8</td>
+                        <td class="col-statement">
+                            The Company's Complaint procedure has been explained to me and I am fully aware of the
+                            process to be followed and the record to be used.
+                            <div class="subtext">
+                                Prosedur keluhan perusahaan telah dijelaskan kepada saya dan saya sepenuhnya mengetahui
+                                proses yang harus diikuti dan catatan yang akan digunakan.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-no">9</td>
+                        <td class="col-statement">
+                            The terms and conditions of employment and my particular conditions applicable to the job
+                            for which I am engaged have been explained to me.
+                            <div class="subtext">
+                                Ketentuan dan persyaratan pekerjaan serta persyaratan tertentu yang berlaku terhadap
+                                pekerjaan di mana saya terlibat telah dijelaskan kepada saya.
+                            </div>
+                        </td>
+                        <td class="col-yes"><span class="check-box"></span></td>
+                        <td class="col-no-check"><span class="check-box"></span></td>
+                    </tr>
+                </table>
+                <br/>
+                <ul style="font-size:13px; padding-left:10px; margin:0;">
+                    <li>
+                       By ticking the YES box you indicate that the documented statement is correct.<br>
+                        <div class="long-line"></div>
+                        Dengan mencentang kotak YA yang anda tandai bahwa pernyataan yang dituliskan adalah benar.
+                    </li>
+                    <br>
+                    <li>
+                        By ticking the NO box you indicate that the documented statement is NOT correct.<br>
+                        <div class="long-line"></div>
+                        Dengan mencentang kotak TIDAK yang anda tandai bahwa pernyataan yang dituliskan adalah TIDAK
+                        benar.
+                    </li>
+                    <br>
+                    <li>
+                        If any statement is answered NO you may enter your remarks below.<br>
+                        <div class="long-line"></div>
+                        Jika pernyataan dijawab TIDAK anda dapat mencantumkan keterangan anda di bawah ini.
+                    </li>
+                </ul>
+                <!-- REMARKS -->
+                <div class="remarks-title">
+                    <strong>Remarks:</strong><br>
+                    <em>Keterangan:</em>
+                </div>
+
+                <div class="remarks-box"></div>
+
+                <!-- SIGNATURE / DETAILS -->
+                <div class="sign-container">
+                    <div class="sign-table-wrapper">
+                        <table class="sign-grid">
+                            <tr>
+                                <td class="sign-box">
+                                    <div class="sign-title">Seafarer's Name</div>
+                                     <div class="long-line-header"
+                                        style="width: 35%;border-bottom: 1px solid #000;margin-left:80px;"></div>
+                                    <div class="sign-sub" id="name-crew-mlc">Nama Pelaut</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="sign-table-wrapper">
+                        <table class="sign-grid">
+                            <tr>
+                                <td class="sign-box">
+                                    <div class="sign-title">Rank</div>
+                                     <div class="long-line-header"
+                                        style="width: 10%;border-bottom: 1px solid #000;margin-left:112px;"></div>
+                                    <div class="sign-sub" id="jabatan-crew-mlc" >Jabatan</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="sign-table-wrapper">
+                        <table class="sign-grid">
+                            <tr>
+                                <td class="sign-box">
+                                    <div class="sign-title">Date</div>
+                                      <div class="long-line-header"
+                                        style="width: 10%;border-bottom: 1px solid #000;margin-left:112px;"></div>
+                                    <div class="sign-sub" id="date-crew-mlc" >Tanggal</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="sign-container">
+                    <div class="sign-table-wrapper">
+                        <table class="sign-grid">
+                            <tr>
+                                <td class="sign-box">
+                                    <div class="sign-title">Eva Marliana</div>
+                                        <div class="long-line-header"
+                                        style="width: 20%;border-bottom: 1px solid #000;margin-left:155px;"></div>
+                                    <div class="sign-sub">Crew Manager</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="sign-table-wrapper">
+                        <table class="sign-grid">
+                            <tr>
+                                <td class="sign-box">
+
+                                    <div class="sign-title">Vessel to Join</div>
+                                    <div class="long-line-header"
+                                        style="width: 20%;border-bottom: 1px solid #000;margin-left:155px;"></div>
+                                    <div class="sign-sub" id="vessel-crew-mlc" >Kapal yang akan dituju</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="txtIdPerson" value="">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveAndPrint">Print</button>
+                </div>
+            </div>
+       
+        </div>
+    </div>
 
 </html>

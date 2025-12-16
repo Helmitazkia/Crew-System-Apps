@@ -134,9 +134,6 @@
 
     function searchData(statusNya) {
         var status = $("#slcSearchStatus").val();
-
-        console.log(statusNya,"statusNya")
-        console.log(status,"status")
         if (statusNya != "") {
             status = statusNya;
             $("#slcSearchStatus").val(statusNya);
