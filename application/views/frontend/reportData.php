@@ -3756,7 +3756,7 @@
         var get_idperson = $("#txtIdPerson").val();
 
         if (!get_idperson) {
-            alert("Id Person Kosong!");
+            alert("Person Empty!");
             return;
         }
 
@@ -3775,16 +3775,39 @@
                 }
 
                 var data = res.data[0];
-                $("#name-crew-mlc").text(data.fullname || "-");
-                $("#jabatan-crew-mlc").text(data.nmrank || "-");
-                $("#date-crew-mlc").text(data.signondt || "-");
-                $("#vessel-crew-mlc").text(data.nmvsl || "-");
+                $("#name-crew-mlc").text(data.fullname);
+                $("#jabatan-crew-mlc").text(data.nmrank);
+                $("#date-crew-mlc").text(data.signondt);
+                $("#vessel-crew-mlc").text(data.nmvsl);
             },
             error: function (xhr, status, error) {
                 console.log("AJAX Error:", error);
                 alert("Error fetching data.");
             }
         });
+    }
+
+    function click_print_form_mlc() {
+
+        var idperson     = $("#txtIdPerson").val();
+        var name_crew    = $("#name-crew-mlc").text();
+        var jabatan_crew = $("#jabatan-crew-mlc").text();
+        var date_crew    = $("#date-crew-mlc").text();
+        var vessel_crew  = $("#vessel-crew-mlc").text();
+
+        if (!idperson) {
+            alert("Id Person Kosong!");
+            return;
+        }
+
+        var url = "<?php echo base_url('report/print_form_mlc'); ?>?" +
+            "idperson=" + encodeURIComponent(idperson) +
+            "&fullname=" + encodeURIComponent(name_crew) +
+            "&nmrank=" + encodeURIComponent(jabatan_crew) +
+            "&signondt=" + encodeURIComponent(date_crew) +
+            "&nmvsl=" + encodeURIComponent(vessel_crew);
+
+        window.open(url, "_blank");
     }
 
     </script>
@@ -8976,7 +8999,7 @@
                     <em>Keterangan:</em>
                 </div>
 
-                <div class="remarks-box"></div>
+                <!-- <div class="remarks-box"></div> -->
 
                 <!-- SIGNATURE / DETAILS -->
                 <div class="sign-container">
@@ -9047,7 +9070,7 @@
                 <div class="modal-footer">
                     <input type="hidden" id="txtIdPerson" value="">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="btnSaveAndPrint">Print</button>
+                    <button type="button" class="btn btn-primary" id="btn-print-form-mlc" onclick="click_print_form_mlc()">Print</button>
                 </div>
             </div>
        

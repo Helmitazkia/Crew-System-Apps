@@ -6475,6 +6475,39 @@ class Report extends CI_Controller {
 		));
 
 	}
+
+	public function print_form_mlc()
+	{
+		$crew = new stdClass();
+		$crew->idperson = $this->input->get('idperson', TRUE);
+		$crew->fullname = $this->input->get('fullname', TRUE);
+		$crew->nmrank   = $this->input->get('nmrank', TRUE);
+		$crew->signondt = $this->input->get('signondt', TRUE);
+		$crew->nmvsl    = $this->input->get('nmvsl', TRUE);
+
+		if (empty($crew->idperson)) {
+			show_error('ID Person tidak ditemukan');
+			return;
+		}
+
+		$data['crew'] = $crew;
+
+		require("application/views/frontend/pdf/mpdf60/mpdf.php");
+		$mpdf = new mPDF('utf-8', 'A4');
+
+		ob_start();
+		$this->load->view('frontend/form_mlc_pdf', $data);
+		$html = ob_get_contents();
+	    ob_end_clean();
+
+		$mpdf->WriteHTML(utf8_encode($html));
+		$mpdf->Output("MLC_Form_" . $crew->fullname . ".pdf", 'I');
+		exit;
+	}
+
+
+
+
 	
 
 }
