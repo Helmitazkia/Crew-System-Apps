@@ -62,66 +62,13 @@ class Report extends CI_Controller {
 		}
 	}
 
-	function getDataApplicantPositionSummary()
-	{
-		$sql = "
-			SELECT 
-				position_applied, 
-				COUNT(*) AS total 
-			FROM (
-				SELECT position_applied
-				FROM new_applicant
-				WHERE deletests = 0 
-				AND st_data IN (0,1,2,3,4,5,6)
-				AND (
-					st_qualify = 'Y' 
-					OR st_qualify2 = 'N' 
-					OR (st_qualify = 'Y' AND st_qualify2 = 'Y')
-					OR (st_qualify = 'N' AND st_qualify2 = 'N')
-					OR (st_qualify = 'Y' AND st_qualify2 = 'N')
-				)
-				AND (
-					submit_cv IS NULL 
-					OR submit_cv = '' 
-					OR submit_cv = '0000-00-00' 
-					OR submit_cv = '0000-00-00 00:00:00' 
-					OR submit_cv IS NOT NULL
-				)
-
-				UNION ALL
-
-				SELECT position_applied
-				FROM new_applicant
-				WHERE deletests = 0
-				AND st_data = 0
-				AND st_qualify = 'N'
-				AND st_qualify2 = 'N'
-			) AS combined_data
-
-			GROUP BY position_applied
-			ORDER BY total DESC
-		";
-
-		$data = $this->MCrewscv->getDataQuery($sql); 
-
-		$result = array();
-		foreach ($data as $row) {
-			$result[] = array(
-				'name' => $row->position_applied,
-				'y'    => (int)$row->total
-			);
-		}
-
-		echo json_encode($result);
-	}
-
-
-	function getDataApplicantPositionSummaryTalentPool()
+	function getDataApplicantPositionSummaryCombined()
 	{
 		$sql = "
 			SELECT 
 				position_applied,
 
+				-- Breakdown status
 				SUM(CASE WHEN st_data = 0 AND st_qualify = 'Y' AND st_qualify2 = 'N' THEN 1 ELSE 0 END) AS qualified,
 				SUM(CASE WHEN st_data = 1 THEN 1 ELSE 0 END) AS pickup,
 				SUM(CASE WHEN st_data = 2 THEN 1 ELSE 0 END) AS not_position,
@@ -133,12 +80,30 @@ class Report extends CI_Controller {
 				SUM(CASE WHEN st_data = 5 THEN 1 ELSE 0 END) AS interview,
 				SUM(CASE WHEN st_data = 6 THEN 1 ELSE 0 END) AS mcu,
 
+				-- Pastikan total dihitung dengan cara yang sama
 				COUNT(*) AS total
 
 			FROM new_applicant
 			WHERE deletests = 0 
-			AND st_data IN (0,1,2,3,4,5,6)
-			AND position_applied IS NOT NULL
+				AND st_data IN (0,1,2,3,4,5,6)
+				AND position_applied IS NOT NULL
+				-- Tambahkan filter yang sama dengan fungsi lainnya
+				AND (
+					-- Sama seperti kondisi di getDataNewApplicent()
+					(st_data = 0 AND st_qualify = 'N' AND st_qualify2 = 'N')
+					OR
+					-- Sama seperti kondisi di getQualifiedCrew()
+					(st_data = 0 AND st_qualify = 'Y' AND st_qualify2 = 'N' AND position_existing != '')
+					OR
+					-- Sama seperti kondisi di getDataPipelineCrew()
+					(st_data IN (2,3,4,7))
+					OR
+					-- Sama seperti kondisi di getDataInterviewCrew()
+					(st_data = 5)
+					OR
+					-- Sama seperti kondisi di getDataMCUCrew()
+					(st_data = 6)
+				)
 			GROUP BY position_applied
 			ORDER BY total DESC
 		";
@@ -272,6 +237,123 @@ class Report extends CI_Controller {
 		));
 	}
 
+	function getDataApproval() {
+		$sql = "
+			SELECT cer.*
+			FROM crew_evaluation_report cer
+			WHERE cer.deletests = '0'
+			AND cer.st_data = '0'
+			GROUP BY cer.idperson
+			ORDER BY cer.id DESC
+		";
+
+		$rows = $this->MCrewscv->getDataQuery($sql);
+
+		usort($rows, function($a, $b) {
+
+			$progressA = ($a->st_submit_chief == "Y") +
+						($a->st_submit_master == "Y") +
+						($a->st_submit_technicalsuperintendent == "Y") +
+						($a->st_submit_cm == "Y") +
+						($a->st_dpa == "Y");
+
+			$progressB = ($b->st_submit_chief == "Y") +
+						($b->st_submit_master == "Y") +
+						($b->st_submit_technicalsuperintendent == "Y") +
+						($b->st_submit_cm == "Y") +
+						($b->st_dpa == "Y");
+
+			if ($a->st_submit_cm == "Y" && $a->st_dpa == "Y") return -1;
+			if ($b->st_submit_cm == "Y" && $b->st_dpa == "Y") return 1;
+
+			return $progressB - $progressA;
+		});
+
+		$trNya = "";
+		$no = 1;
+
+		$fn = function($flag, $dateField, $roleLabel) {
+			if ($flag === "Y") {
+				$tgl = $dateField ? date("d M Y", strtotime($dateField)) : "-";
+				$jam = $dateField ? date("H:i", strtotime($dateField)) : "-";
+
+				$tooltip = "Approved by {$roleLabel} - {$tgl} {$jam}";
+
+				return "
+					<div title='{$tooltip}' 
+						style='color:green;font-weight:bold;cursor:pointer;'>
+						✔
+					</div>
+					<div style='font-size:10px;'>{$tgl}<br>{$jam}</div>
+				";
+			}
+			return "";
+		};
+
+		foreach ($rows as $val) {
+
+			$val->st_notify_os = property_exists($val, 'st_notify_os') ? $val->st_notify_os : "N";
+
+			if ($val->st_submit_technicalsuperintendent == "Y") {
+
+				$os = $fn($val->st_submit_technicalsuperintendent, $val->st_submitDate_os, "Technical Superintendent");
+
+			}
+			else if ($val->st_submit_master == "Y" && $val->st_notify_os == "Y") {
+				$os = "
+					<div style='color:#ff9800;font-weight:bold;'>⏳</div>
+					<div style='font-size:10px;color:#ff9800;'>Waiting OS</div>
+				";
+			}
+			else if ($val->st_submit_master == "Y" && $val->st_notify_os == "N") {
+				$os = "
+					<div style='color:#e53935;font-weight:bold;'>❗</div>
+					<div style='font-size:10px;color:#e53935;'>Email not sent</div>
+				";
+
+			}
+			else {
+
+				$os = "";
+			}
+			$rowBg = ($val->st_submit_cm == "Y" && $val->st_dpa == "Y")
+						? "background:#e6ffe6;"  
+						: "";
+
+			$crewName = $val->seafarer_name ?: "-";
+			$rank     = $val->rank ?: "-";
+
+			$signIn  = ($val->reporting_period_from) ? date("d M Y", strtotime($val->reporting_period_from)) : "-";
+			$signOut = ($val->reporting_period_to) ? date("d M Y", strtotime($val->reporting_period_to)) : "-";
+			$period  = ($val->date_of_report) ? date("d M Y", strtotime($val->date_of_report)) : "-";
+
+			$chief  = $fn($val->st_submit_chief, $val->st_submitDate_chief, "Chief");
+			$master = $fn($val->st_submit_master, $val->st_submitDate_master, "Master");
+			$os     = $fn($val->st_submit_technicalsuperintendent, $val->st_submitDate_os, "Technical Superintendent");
+			$cm     = $fn($val->st_submit_cm, $val->st_submitDate_cm, "Crewing Manager");
+			$dpa    = $fn($val->st_dpa, $val->st_submitDate_dpa, "DPA");
+
+			$trNya .= "<tr style='{$rowBg}'>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$no}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:left;'>{$crewName}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$rank}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$signIn}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$signOut}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$period}</td>";
+
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$chief}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$master}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$os}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$cm}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$dpa}</td>";
+
+			$trNya .= "</tr>";
+
+			$no++;
+		}
+
+		echo json_encode($trNya);
+	}
 
 	function getRankByCheckbox()
 	{
@@ -6223,6 +6305,173 @@ class Report extends CI_Controller {
 
 		$this->load->view("frontend/exportExpiredCert",$dataOut);
 	}
+
+	function get_data_form_mlc()
+	{
+		// Validasi parameter
+		$idperson = $this->input->post("idperson", true);
+		
+		$sql = "
+			SELECT 
+				B.signonvsl,
+				CONCAT_WS(' ', A.fname, A.mname, A.lname) AS fullname,
+				B.signondt,
+				B.estsignoffdt,
+				C.nmrank,
+				D.nmvsl
+			FROM mstpersonal A
+			LEFT JOIN tblcontract B ON A.idperson = B.idperson
+			LEFT JOIN mstrank C ON B.signonrank = C.kdrank
+			LEFT JOIN mstvessel D ON B.signonvsl = D.kdvsl
+			WHERE 1=1
+				AND B.idperson = '$idperson'
+			GROUP BY B.signonvsl, fullname, B.signondt, B.estsignoffdt, C.nmrank
+			ORDER BY B.signondt DESC
+			LIMIT 1
+		";
+
+		$data = $this->MCrewscv->getDataQuery($sql);
+
+		$result = array();
+
+		if (!empty($data)) {
+			foreach ($data as $row) {
+				$result[] = array(
+					'signonvsl'    => isset($row->signonvsl) ? $row->signonvsl : '',
+					'fullname'     => isset($row->fullname) ? $row->fullname : '',
+					'signondt'     => (!empty($row->signondt) && $row->signondt != '0000-00-00')
+										? date("d M Y", strtotime($row->signondt))
+										: '',
+					'estsignoffdt' => (!empty($row->estsignoffdt) && $row->estsignoffdt != '0000-00-00')
+										? date("d M Y", strtotime($row->estsignoffdt))
+										: '',
+					'nmrank'       => isset($row->nmrank) ? $row->nmrank : '',
+					'nmvsl'        => isset($row->nmvsl) ? $row->nmvsl : ''
+				);
+			}
+		}
+
+		echo json_encode(array(
+			'success' => !empty($result),
+			'data'    => $result
+		));
+
+	}
+
+	// public function print_form_mlc()
+	// {
+	// 	$crew = new stdClass();
+	// 	$crew->idperson = $this->input->get('idperson', TRUE);
+	// 	$crew->fullname = $this->input->get('fullname', TRUE);
+	// 	$crew->nmrank   = $this->input->get('nmrank', TRUE);
+	// 	$crew->signondt = $this->input->get('signondt', TRUE);
+	// 	$crew->nmvsl    = $this->input->get('nmvsl', TRUE);
+
+	// 	if (empty($crew->idperson)) {
+	// 		show_error('ID Person tidak ditemukan');
+	// 		return;
+	// 	}
+
+	// 	$data['crew'] = $crew;
+
+	// 	require("application/views/frontend/pdf/mpdf60/mpdf.php");
+	// 	$mpdf = new mPDF('utf-8', 'A4');
+
+	// 	ob_start();
+	// 	$this->load->view('frontend/form_mlc_pdf', $data);
+	// 	$html = ob_get_contents();
+	//     ob_end_clean();
+
+	// 	$mpdf->WriteHTML(utf8_encode($html));
+	// 	$mpdf->Output("MLC_Form_" . $crew->fullname . ".pdf", 'I');
+	// 	exit;
+	// }
+
+	// public function generate_mlc_pdf()
+	// {
+	// 	// Terima data dari GET/POST - gunakan array() bukan []
+	// 	$checkbox_data = array();
+		
+	// 	// Loop untuk 9 statement
+	// 	for ($i = 1; $i <= 9; $i++) {
+	// 		$value = $this->input->get('statement_' . $i);
+	// 		$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
+	// 	}
+		
+	// 	// Data crew
+	// 	$crew = new stdClass();
+	// 	$crew->idperson = $this->input->get('idperson');
+	// 	$crew->fullname = $this->input->get('fullname');
+	// 	$crew->nmrank = $this->input->get('nmrank');
+	// 	$crew->signondt = $this->input->get('signondt');
+	// 	$crew->nmvsl = $this->input->get('nmvsl');
+		
+	// 	// Gabungkan data - gunakan array() bukan []
+	// 	$data = array(
+	// 		'crew' => $crew,
+	// 		'checkboxes' => $checkbox_data,
+	// 		'all_data' => $_GET // untuk debugging
+	// 	);
+		
+	// 	// Debug
+	// 	echo '<pre>';
+	// 	print_r($data);
+	// 	echo '</pre>';
+	// 	exit; // Hapus ini setelah testing
+		
+	// 	// Lanjutkan generate PDF...
+	// 	// $this->load->view('frontend/pdf_template', $data);
+	// }
+
+	public function generate_mlc_pdf()
+	{
+		// Terima data dari GET - gunakan array() bukan []
+		$checkbox_data = array();
+		
+		// Loop untuk 9 statement
+		for ($i = 1; $i <= 9; $i++) {
+			$value = $this->input->get('statement_' . $i);
+			$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
+		}
+		
+		// Data crew
+		$crew = new stdClass();
+		$crew->idperson = $this->input->get('idperson');
+		$crew->fullname = $this->input->get('fullname');
+		$crew->nmrank = $this->input->get('nmrank');
+		$crew->signondt = $this->input->get('signondt');
+		$crew->nmvsl = $this->input->get('nmvsl');
+		
+		// Gabungkan data - gunakan array() bukan []
+		$data = array(
+			'crew' => $crew,
+			'checkboxes' => $checkbox_data,
+			'all_data' => $_GET // untuk debugging
+		);
+		
+		// Debug - HAPUS setelah testing
+		// echo '<pre>';
+		// print_r($data);
+		// echo '</pre>';
+		// exit;
+		
+		// Lanjutkan generate PDF...
+		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
+		$mpdf = new mPDF('utf-8', 'A4');
+		
+		ob_start();
+		$this->load->view('frontend/form_mlc_pdf', $data);
+		$html = ob_get_clean();
+		
+		$mpdf->WriteHTML($html);
+		$filename = "MLC_Form_" . $crew->fullname . "_" . date('Ymd') . ".pdf";
+		$mpdf->Output($filename, 'I');
+		exit;
+	}
+
+
+
+
 	
 
 }
