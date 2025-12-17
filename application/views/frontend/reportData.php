@@ -644,7 +644,7 @@
         });
     }
 
-    
+
     $(document).ready(function() {
 
         function refreshReleaseMinusButton() {
@@ -1961,18 +1961,11 @@
 
     function loadDefaultCharts() {
         $.ajax({
-            url: '<?php echo base_url("report/getDataApplicantPositionSummary") ?>',
+            url: '<?php echo base_url("report/getDataApplicantPositionSummaryCombined") ?>',
             method: 'GET',
             dataType: 'json',
             success: function(data) {
                 renderApplicantPieChart(data);
-            }
-        });
-        $.ajax({
-            url: '<?php echo base_url("report/getDataApplicantPositionSummaryTalentPool") ?>',
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
                 renderTalentPoolPieChart(data);
             }
         });
@@ -1992,11 +1985,31 @@
     }
 
     function renderApplicantPieChart(data) {
-        data.sort((a, b) => b.y - a.y);
 
-        for (let i = 0; i < data.length; i++) {
-            data[i].sliced = i < 2;
-            data[i].selected = i < 2;
+        const normalized = data.map(item => {
+            const applicantTotal =
+                item.qualified +
+                item.pickup +
+                item.not_position +
+                item.not_qualified_total +
+                item.not_reference_total +
+                item.interview +
+                item.mcu +
+                item.not_qualified_experience +
+                item.not_qualified_certificate +
+                item.not_qualified_interview;
+
+            return {
+                name: item.name,
+                y: applicantTotal
+            };
+        }).filter(item => item.y > 0);
+
+        normalized.sort((a, b) => b.y - a.y);
+
+        for (let i = 0; i < normalized.length; i++) {
+            normalized[i].sliced = i < 2;
+            normalized[i].selected = i < 2;
         }
 
         Highcharts.chart('newApplicantChartContainer', {
@@ -2008,28 +2021,24 @@
                 height: 700
             },
             title: {
-                text: 'Percentage of New Applicants by Position Applied',
+                text: 'Pipeline Applicants Distribution by Position',
                 style: {
                     color: 'var(--highcharts-title-color)',
                     fontSize: '1.5em'
                 }
             },
             subtitle: {
-                text: 'Top 5 positions are highlighted',
+                text: 'Excludes new applicants (not yet in pipeline)',
                 style: {
                     color: 'var(--highcharts-subtitle-color)',
                     fontSize: '1.2em'
                 }
             },
             tooltip: {
-                pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: {point.y} applicant(s) - <b>({point.percentage:.1f}%)</b>',
+                pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: {point.y} applicant(s) ' +
+                    '<b>({point.percentage:.1f}%)</b>',
                 style: {
                     fontSize: '15px'
-                }
-            },
-            accessibility: {
-                point: {
-                    valueSuffix: '%'
                 }
             },
             plotOptions: {
@@ -2051,7 +2060,7 @@
             series: [{
                 name: 'Applicants',
                 colorByPoint: true,
-                data: data
+                data: normalized
             }],
             credits: {
                 enabled: false
@@ -2059,80 +2068,102 @@
         });
     }
 
+
+
     function renderTalentPoolPieChart(data) {
-        data.sort((a, b) => b.y - a.y);
-        const totalApplicants = data.reduce((sum, item) => sum + item.y, 0);
+        var filtered = data.map(function(item) {
 
-        const seriesData = [];
-        const drilldownSeries = [];
+            var pipelineTotal =
+                (item.qualified || 0) +
+                (item.pickup || 0) +
+                (item.not_position || 0) +
+                (item.not_qualified_total || 0) +
+                (item.not_reference_total || 0) +
+                (item.interview || 0) +
+                (item.mcu || 0) +
+                (item.not_qualified_experience || 0) +
+                (item.not_qualified_certificate || 0) +
+                (item.not_qualified_interview || 0);
 
-        data.forEach(item => {
-            const {
-                name,
-                y,
-                qualified,
-                pickup,
-                not_position,
-                not_qualified_total,
-                not_qualified_experience,
-                not_qualified_certificate,
-                not_qualified_interview,
-                not_reference_total,
-                interview,
-                mcu
-            } = item;
+            item.pipelineTotal = pipelineTotal;
+            return item;
 
-            const totalDrill = qualified + pickup + not_position + not_qualified_total +
-                not_reference_total +
-                interview + mcu;
+        }).filter(function(item) {
+            return item.pipelineTotal > 0;
+        });
 
+        filtered.sort(function(a, b) {
+            return b.pipelineTotal - a.pipelineTotal;
+        });
 
-            const scaleFactor = totalDrill > 0 ? y / totalDrill : 1;
+        var totalApplicants = filtered.reduce(function(sum, item) {
+            return sum + item.pipelineTotal;
+        }, 0);
 
-            const drillData = [{
+        var seriesData = [];
+        var drilldownSeries = [];
+
+        filtered.forEach(function(item) {
+
+            var percentage = ((item.pipelineTotal / totalApplicants) * 100).toFixed(1);
+
+            seriesData.push({
+                name: item.name + ' (' + percentage + '%)',
+                y: item.pipelineTotal,
+                drilldown: item.name
+            });
+
+            var drillData = [{
                     name: 'Qualified',
-                    y: Math.round(qualified)
+                    y: item.qualified
                 },
                 {
-                    name: 'PickUp',
-                    y: Math.round(pickup)
+                    name: 'Pick Up',
+                    y: item.pickup
                 },
                 {
                     name: 'No Position',
-                    y: Math.round(not_position)
+                    y: item.not_position
                 },
                 {
-                    name: 'Not Qualified Certificate',
-                    y: Math.round(not_qualified_total)
+                    name: 'Not Qualified (Total)',
+                    y: item.not_qualified_total
                 },
                 {
-                    name: 'Not Qualified Interview',
-                    y: Math.round(not_reference_total)
+                    name: 'Not Qualified - Experience',
+                    y: item.not_qualified_experience
+                },
+                {
+                    name: 'Not Qualified - Certificate',
+                    y: item.not_qualified_certificate
+                },
+                {
+                    name: 'Not Qualified - Interview',
+                    y: item.not_qualified_interview
+                },
+                {
+                    name: 'Not Reference',
+                    y: item.not_reference_total
                 },
                 {
                     name: 'Interview',
-                    y: Math.round(interview)
+                    y: item.interview
                 },
                 {
                     name: 'MCU',
-                    y: Math.round(mcu)
+                    y: item.mcu
                 }
-            ];
-
-            const percentage = ((y / totalApplicants) * 100).toFixed(1);
-
-            seriesData.push({
-                name: `${name} (${percentage}%)`,
-                y: y,
-                drilldown: name
+            ].filter(function(d) {
+                return d.y > 0;
             });
 
             drilldownSeries.push({
-                id: name,
-                name: `${name} Details (Total: ${y} applicants)`,
+                id: item.name,
+                name: item.name + ' Pipeline Details (Total: ' + item.pipelineTotal + ')',
                 data: drillData
             });
         });
+
 
         Highcharts.chart('talentPoolChartContainer', {
             chart: {
@@ -2149,10 +2180,11 @@
                 }
             },
             subtitle: {
-                text: 'Click the slices to view status breakdown',
+                text: 'Click the slices to view status breakdown<br><span style="font-size:11px;color:#555;">Pipeline total includes detailed not-qualified categories</span>',
+                useHTML: true,
                 style: {
                     color: '#000000',
-                    fontSize: '1.2em'
+                    fontSize: '1.1em'
                 }
             },
             plotOptions: {
@@ -2190,6 +2222,7 @@
             }
         });
     }
+
 
     function pickUpDataApplicant(applicantId) {
         Swal.fire({
@@ -3766,9 +3799,11 @@
         $.ajax({
             url: "<?php echo base_url('report/get_data_form_mlc'); ?>",
             type: "POST",
-            data: { idperson: get_idperson },
+            data: {
+                idperson: get_idperson
+            },
             dataType: "json",
-            success: function (res) {
+            success: function(res) {
                 if (!res.success || !res.data || res.data.length === 0) {
                     alert("Data tidak ditemukan!");
                     return;
@@ -3780,7 +3815,7 @@
                 $("#date-crew-mlc").text(data.signondt);
                 $("#vessel-crew-mlc").text(data.nmvsl);
             },
-            error: function (xhr, status, error) {
+            error: function(xhr, status, error) {
                 console.log("AJAX Error:", error);
                 alert("Error fetching data.");
             }
@@ -3789,11 +3824,11 @@
 
     function click_print_form_mlc() {
 
-        var idperson     = $("#txtIdPerson").val();
-        var name_crew    = $("#name-crew-mlc").text();
+        var idperson = $("#txtIdPerson").val();
+        var name_crew = $("#name-crew-mlc").text();
         var jabatan_crew = $("#jabatan-crew-mlc").text();
-        var date_crew    = $("#date-crew-mlc").text();
-        var vessel_crew  = $("#vessel-crew-mlc").text();
+        var date_crew = $("#date-crew-mlc").text();
+        var vessel_crew = $("#vessel-crew-mlc").text();
 
         if (!idperson) {
             alert("Id Person Kosong!");
@@ -3810,101 +3845,273 @@
         window.open(url, "_blank");
     }
 
+
+    $(document).ready(function() {
+    // 1. Fungsi untuk handle perubahan checkbox (validasi pilih salah satu)
+    $('.check-box').on('change', function() {
+        const $this = $(this);
+        const isYes = $this.hasClass('yes-checkbox');
+        const pairedName = isYes 
+            ? $this.data('no-checkbox') 
+            : $this.data('yes-checkbox');
+        
+        // Jika checkbox ini dicentang
+        if ($this.is(':checked')) {
+            // Uncheck checkbox pasangannya
+            $(`[name="${pairedName}"]`).prop('checked', false);
+        }
+    });
+    
+    // 2. Fungsi untuk mendapatkan semua nilai checkbox
+    function getAllCheckboxValues() {
+        const values = {};
+        let allFilled = true;
+        const missingStatements = [];
+        
+        // Loop untuk 9 statement
+        for (let i = 1; i <= 9; i++) {
+            const $yesCheckbox = $(`[name="statement_${i}"]`);
+            const $noCheckbox = $(`[name="statement_${i}_no"]`);
+            
+            // Cek apakah sudah dipilih
+            if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
+                allFilled = false;
+                missingStatements.push(i);
+            }
+            
+            // Simpan nilai (1 untuk Yes, 0 untuk No, null jika belum dipilih)
+            values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 : 
+                                      ($noCheckbox.is(':checked') ? 0 : null);
+        }
+        
+        return {
+            values: values,
+            allFilled: allFilled,
+            missingStatements: missingStatements
+        };
+    }
+    
+    // 3. Fungsi untuk menampilkan nilai di console
+        function showCheckboxValues() {
+            const result = getAllCheckboxValues();
+            
+            console.log('=== CHECKBOX VALUES ===');
+            console.log('Nilai per statement:');
+            
+            // Tampilkan dalam format tabel
+            for (let i = 1; i <= 9; i++) {
+                const value = result.values[`statement_${i}`];
+                const status = value === 1 ? '✅ Yes (1)' : 
+                            value === 0 ? '❌ No (0)' : 
+                            '⚠️ Belum dipilih';
+                console.log(`Statement ${i}: ${status}`);
+            }
+            
+            // Tampilkan dalam bentuk object
+            console.log('Data Object:', result.values);
+            
+            // Tampilkan summary
+            console.log('Summary:');
+            console.log(`- Total statements: 9`);
+            console.log(`- Terisi: ${Object.values(result.values).filter(v => v !== null).length}`);
+            console.log(`- Belum terisi: ${Object.values(result.values).filter(v => v === null).length}`);
+            
+            return result;
+        }
+
+        // 4. Event handler untuk tombol Print
+        $('#btn-print-form-mlc').on('click', function() {
+            console.clear(); // Clear console dulu
+            
+            const result = getAllCheckboxValues();
+            
+            // Validasi: semua harus dipilih
+            if (!result.allFilled) {
+                alert(`Harap pilih semua statement!\n\nStatement yang belum dipilih: ${result.missingStatements.join(', ')}`);
+                
+                // Highlight baris yang belum diisi
+                $('tr').removeClass('missing-row');
+                result.missingStatements.forEach(num => {
+                    $(`[name="statement_${num}"]`).closest('tr').addClass('missing-row');
+                });
+                
+                return;
+            }
+            
+            // Tampilkan nilai di console
+            showCheckboxValues();            
+            // // Kirim data untuk print
+            generatePDF(result.values);
+        });
+
+
+        // 5. Fungsi untuk generate PDF (contoh)
+        // function generatePDF(checkboxValues) {
+        //     // Ambil parameter dari URL
+        //     const urlParams = new URLSearchParams(window.location.search);
+        //     var idperson = $("#txtIdPerson").val();
+        //     var name_crew = $("#name-crew-mlc").text();
+        //     var jabatan_crew = $("#jabatan-crew-mlc").text();
+        //     var date_crew = $("#date-crew-mlc").text();
+        //     var vessel_crew = $("#vessel-crew-mlc").text();
+        //     // Gabungkan semua data
+        //     const data = {
+        //         ...checkboxValues,
+        //         idperson: idperson,
+        //         fullname: name_crew,
+        //         nmrank: jabatan_crew
+        //         signondt:date_crew,
+        //         nmvsl: vessel_crew
+        //     };
+            
+        //     console.log('Data untuk dikirim ke server:', data);
+            
+        //     // OPTION A: Redirect ke URL dengan parameter
+        //     const params = new URLSearchParams(data).toString();
+        //     window.open(`report/generate_mlc_pdf?${params}`, '_blank');
+            
+        //     // OPTION B: AJAX request
+            
+        //     $.ajax({
+        //         url: "<?php echo base_url('report/generate_mlc_pdf'); ?>?",
+        //         type: 'POST',
+        //         data: data,
+        //         success: function(response) {
+        //             if (response.success) {
+        //                 window.open(response.pdf_url, '_blank');
+        //             } else {
+        //                 alert('Error: ' + response.message);
+        //             }
+        //         }
+        //     });
+            
+        // }
+
+        function generatePDF(checkboxValues) {
+            // Ambil parameter dari URL
+            const urlParams = new URLSearchParams(window.location.search);
+            var idperson = $("#txtIdPerson").val();
+            var name_crew = $("#name-crew-mlc").text();
+            var jabatan_crew = $("#jabatan-crew-mlc").text();
+            var date_crew = $("#date-crew-mlc").text();
+            var vessel_crew = $("#vessel-crew-mlc").text();
+            
+            // Gabungkan semua data
+            const data = {
+                ...checkboxValues,
+                idperson: idperson,
+                fullname: name_crew,
+                nmrank: jabatan_crew,
+                signondt: date_crew,
+                nmvsl: vessel_crew
+            };
+            
+            console.log('Data untuk dikirim ke server:', data);
+            
+            // OPTION A: Redirect ke URL dengan parameter
+            const params = new URLSearchParams(data).toString();
+            window.open(`<?php echo base_url(); ?>report/generate_mlc_pdf?${params}`, '_blank');
+        }
+
+       
+
+
+    });
     </script>
 </head>
 
 
 <style>
-    .long-line {
+.long-line {
 
-        width: 100%;
-        border-bottom: 1px solid #000;
+    width: 100%;
+    border-bottom: 1px solid #000;
 
-    }
+}
 
-    .statement-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
+.statement-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
 
-    .statement-table th,
-    .statement-table td {
-        border: 1px solid #000;
-        padding: 6px;
-        vertical-align: top;
-    }
+.statement-table th,
+.statement-table td {
+    border: 1px solid #000;
+    padding: 6px;
+    vertical-align: top;
+}
 
-    .statement-table th {
-        text-align: center;
-        font-weight: bold;
-    }
+.statement-table th {
+    text-align: center;
+    font-weight: bold;
+}
 
-    .col-no {
-        width: 40px;
-        text-align: center;
-    }
+.col-no {
+    width: 40px;
+    text-align: center;
+}
 
-    .col-statement {
-        width: auto;
-        text-align: left;
-    }
+.col-statement {
+    width: auto;
+    text-align: left;
+}
 
-    .col-yes,
-    .col-no-check {
-        width: 70px;
-        text-align: center;
-    }
+.col-yes,
+.col-no-check {
+    width: 70px;
+    text-align: center;
+}
 
-    .check-box {
-        width: 18px;
-        height: 18px;
-        border: 1.5px solid #000;
-        display: inline-block;
-    }
+.check-box {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #000;
+    display: inline-block;
+}
 
-    .subtext {
-        font-style: italic;
-        font-size: 12px;
-        margin-top: 3px;
-    }
+.subtext {
+    font-style: italic;
+    font-size: 12px;
+    margin-top: 3px;
+}
 
-    .remarks-title {
-        font-size: 13px;
-        margin: 8px 0 4px 0;
-    }
+.remarks-title {
+    font-size: 13px;
+    margin: 8px 0 4px 0;
+}
 
-    .remarks-box {
-        width: 100%;
-        height: 70px;
-        border: 1px solid #000;
-        margin-bottom: 14px;
-    }
+.remarks-box {
+    width: 100%;
+    height: 70px;
+    border: 1px solid #000;
+    margin-bottom: 14px;
+}
 
-    .sign-container {
-        display: flex;
-        gap: 20px;
-        /* Jarak antar box */
-        margin-top: 10px;
-    }
+.sign-container {
+    display: flex;
+    gap: 20px;
+    /* Jarak antar box */
+    margin-top: 10px;
+}
 
-    .sign-table-wrapper {
-        flex: 1;
-    }
+.sign-table-wrapper {
+    flex: 1;
+}
 
-    .sign-grid {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-        font-size: 13px;
-    }
+.sign-grid {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: 13px;
+}
 
-    .sign-box {
-        border: 1px solid #000;
-        height: 90px;
-        vertical-align: bottom;
-        padding-bottom: 8px;
-    }
+.sign-box {
+    border: 1px solid #000;
+    height: 90px;
+    vertical-align: bottom;
+    padding-bottom: 8px;
+}
 </style>
 
 <body>
@@ -8848,7 +9055,7 @@
                         <th class="col-yes">Yes<br>Ya</th>
                         <th class="col-no-check">No<br>Tidak</th>
                     </tr>
-                    <tr>
+                     <tr>
                         <td class="col-no">1</td>
                         <td class="col-statement">
                             All items contained in my employment contract have been explained to me and I am aware of
@@ -8858,8 +9065,12 @@
                                 memahaminya.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_1" value="1" data-no-checkbox="statement_1_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_1_no" value="0" data-yes-checkbox="statement_1">
+                        </td>
                     </tr>
                     <tr>
                         <td class="col-no">2</td>
@@ -8872,8 +9083,12 @@
                                 perjanjian ini.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_2" value="1" data-no-checkbox="statement_2_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_2_no" value="0" data-yes-checkbox="statement_2">
+                        </td>
                     </tr>
                     <tr>
                         <td class="col-no">3</td>
@@ -8885,8 +9100,12 @@
                                 ketentuan dan persyaratan dalam perjanjian tersebut..
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_3" value="1" data-no-checkbox="statement_3_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_3_no" value="0" data-yes-checkbox="statement_3">
+                        </td>
                     </tr>
                     <tr>
                         <td class="col-no">4</td>
@@ -8898,10 +9117,13 @@
                                 tanggungjawab saya.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_4" value="1" data-no-checkbox="statement_4_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_4_no" value="0" data-yes-checkbox="statement_4">
+                        </td>
                     </tr>
-
                     <tr>
                         <td class="col-no">5</td>
                         <td class="col-statement">
@@ -8912,10 +9134,13 @@
                                 atas kapal.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_5" value="1" data-no-checkbox="statement_5_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_5_no" value="0" data-yes-checkbox="statement_5">
+                        </td>
                     </tr>
-
                     <tr>
                         <td class="col-no">6</td>
                         <td class="col-statement">
@@ -8927,10 +9152,13 @@
                                 keseluruhan atau sebagian.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_6" value="1" data-no-checkbox="statement_6_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_6_no" value="0" data-yes-checkbox="statement_6">
+                        </td>
                     </tr>
-
                     <tr>
                         <td class="col-no">7</td>
                         <td class="col-statement">
@@ -8940,10 +9168,13 @@
                                 tersebut.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_7" value="1" data-no-checkbox="statement_7_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_7_no" value="0" data-yes-checkbox="statement_7">
+                        </td>
                     </tr>
-
                     <tr>
                         <td class="col-no">8</td>
                         <td class="col-statement">
@@ -8954,10 +9185,13 @@
                                 proses yang harus diikuti dan catatan yang akan digunakan.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_8" value="1" data-no-checkbox="statement_8_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_8_no" value="0" data-yes-checkbox="statement_8">
+                        </td>
                     </tr>
-
                     <tr>
                         <td class="col-no">9</td>
                         <td class="col-statement">
@@ -8968,14 +9202,18 @@
                                 pekerjaan di mana saya terlibat telah dijelaskan kepada saya.
                             </div>
                         </td>
-                        <td class="col-yes"><span class="check-box"></span></td>
-                        <td class="col-no-check"><span class="check-box"></span></td>
+                        <td class="col-yes">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_9" value="1" data-no-checkbox="statement_9_no">
+                        </td>
+                        <td class="col-no-check">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_9_no" value="0" data-yes-checkbox="statement_9">
+                        </td>
                     </tr>
                 </table>
-                <br/>
+                <br />
                 <ul style="font-size:13px; padding-left:10px; margin:0;">
                     <li>
-                       By ticking the YES box you indicate that the documented statement is correct.<br>
+                        By ticking the YES box you indicate that the documented statement is correct.<br>
                         <div class="long-line"></div>
                         Dengan mencentang kotak YA yang anda tandai bahwa pernyataan yang dituliskan adalah benar.
                     </li>
@@ -9008,7 +9246,7 @@
                             <tr>
                                 <td class="sign-box">
                                     <div class="sign-title">Seafarer's Name</div>
-                                     <div class="long-line-header"
+                                    <div class="long-line-header"
                                         style="width: 35%;border-bottom: 1px solid #000;margin-left:80px;"></div>
                                     <div class="sign-sub" id="name-crew-mlc">Nama Pelaut</div>
                                 </td>
@@ -9020,9 +9258,9 @@
                             <tr>
                                 <td class="sign-box">
                                     <div class="sign-title">Rank</div>
-                                     <div class="long-line-header"
+                                    <div class="long-line-header"
                                         style="width: 10%;border-bottom: 1px solid #000;margin-left:112px;"></div>
-                                    <div class="sign-sub" id="jabatan-crew-mlc" >Jabatan</div>
+                                    <div class="sign-sub" id="jabatan-crew-mlc">Jabatan</div>
                                 </td>
                             </tr>
                         </table>
@@ -9032,9 +9270,9 @@
                             <tr>
                                 <td class="sign-box">
                                     <div class="sign-title">Date</div>
-                                      <div class="long-line-header"
+                                    <div class="long-line-header"
                                         style="width: 10%;border-bottom: 1px solid #000;margin-left:112px;"></div>
-                                    <div class="sign-sub" id="date-crew-mlc" >Tanggal</div>
+                                    <div class="sign-sub" id="date-crew-mlc">Tanggal</div>
                                 </td>
                             </tr>
                         </table>
@@ -9046,7 +9284,7 @@
                             <tr>
                                 <td class="sign-box">
                                     <div class="sign-title">Eva Marliana</div>
-                                        <div class="long-line-header"
+                                    <div class="long-line-header"
                                         style="width: 20%;border-bottom: 1px solid #000;margin-left:155px;"></div>
                                     <div class="sign-sub">Crew Manager</div>
                                 </td>
@@ -9061,7 +9299,7 @@
                                     <div class="sign-title">Vessel to Join</div>
                                     <div class="long-line-header"
                                         style="width: 20%;border-bottom: 1px solid #000;margin-left:155px;"></div>
-                                    <div class="sign-sub" id="vessel-crew-mlc" >Kapal yang akan dituju</div>
+                                    <div class="sign-sub" id="vessel-crew-mlc">Kapal yang akan dituju</div>
                                 </td>
                             </tr>
                         </table>
@@ -9070,10 +9308,11 @@
                 <div class="modal-footer">
                     <input type="hidden" id="txtIdPerson" value="">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="btn-print-form-mlc" onclick="click_print_form_mlc()">Print</button>
+                    <button type="button" class="btn btn-primary" id="btn-print-form-mlc"
+                        onclick="click_print_sdfsdf()">Print</button>
                 </div>
             </div>
-       
+
         </div>
     </div>
 

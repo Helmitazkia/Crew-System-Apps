@@ -62,162 +62,49 @@ class Report extends CI_Controller {
 		}
 	}
 
-	function getDataApplicantPositionSummary()
-	{
-		$sql = "
-			SELECT 
-				position_applied, 
-				COUNT(*) AS total 
-			FROM (
-				SELECT position_applied
-				FROM new_applicant
-				WHERE deletests = 0 
-				AND st_data IN (0,1,2,3,4,5,6)
-				AND (
-					st_qualify = 'Y' 
-					OR st_qualify2 = 'N' 
-					OR (st_qualify = 'Y' AND st_qualify2 = 'Y')
-					OR (st_qualify = 'N' AND st_qualify2 = 'N')
-					OR (st_qualify = 'Y' AND st_qualify2 = 'N')
-				)
-				AND (
-					submit_cv IS NULL 
-					OR submit_cv = '' 
-					OR submit_cv = '0000-00-00' 
-					OR submit_cv = '0000-00-00 00:00:00' 
-					OR submit_cv IS NOT NULL
-				)
-
-				UNION ALL
-
-				SELECT position_applied
-				FROM new_applicant
-				WHERE deletests = 0
-				AND st_data = 0
-				AND st_qualify = 'N'
-				AND st_qualify2 = 'N'
-			) AS combined_data
-
-			GROUP BY position_applied
-			ORDER BY total DESC
-		";
-
-		$data = $this->MCrewscv->getDataQuery($sql); 
-
-		$result = array();
-		foreach ($data as $row) {
-			$result[] = array(
-				'name' => $row->position_applied,
-				'y'    => (int)$row->total
-			);
-		}
-
-		echo json_encode($result);
-	}
-
-
-	// function getDataApplicantPositionSummaryTalentPool()
-	// {
-	// 	$sql = "
-	// 		SELECT 
-	// 			position_applied,
-
-	// 			SUM(CASE WHEN st_data = 0 AND st_qualify = 'Y' AND st_qualify2 = 'N' THEN 1 ELSE 0 END) AS qualified,
-	// 			SUM(CASE WHEN st_data = 1 THEN 1 ELSE 0 END) AS pickup,
-	// 			SUM(CASE WHEN st_data = 2 THEN 1 ELSE 0 END) AS not_position,
-	// 			SUM(CASE WHEN st_data = 3 THEN 1 ELSE 0 END) AS not_qualified_total,
-	// 			SUM(CASE WHEN st_data = 3 AND reason_not_qualified != '' AND reason_not_qualified IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_experience,
-	// 			SUM(CASE WHEN st_data = 3 AND reason_not_qualified_layer1 != '' AND reason_not_qualified_layer1 IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_certificate,
-	// 			SUM(CASE WHEN st_data = 4 AND notReff_reason != '' AND notReff_reason IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_interview,
-	// 			SUM(CASE WHEN st_data = 4 THEN 1 ELSE 0 END) AS not_reference_total,
-	// 			SUM(CASE WHEN st_data = 5 THEN 1 ELSE 0 END) AS interview,
-	// 			SUM(CASE WHEN st_data = 6 THEN 1 ELSE 0 END) AS mcu,
-
-	// 			COUNT(*) AS total
-
-	// 		FROM new_applicant
-	// 		WHERE deletests = 0 
-	// 		AND st_data IN (0,1,2,3,4,5,6)
-	// 		AND position_applied IS NOT NULL
-	// 		GROUP BY position_applied
-	// 		ORDER BY total DESC
-	// 	";
-
-		
-
-	// 	// echo "<pre>";
-	// 	// print_r($sql);
-	// 	// echo "</pre>";
-	// 	// exit;
-
-
-	// 	$positions = $this->MCrewscv->getDataQuery($sql);
-
-	// 	$result = array();
-	// 	foreach ($positions as $row) {
-	// 		$result[] = array(
-	// 			'name'                      => $row->position_applied,
-	// 			'y'                         => (int)$row->total,
-	// 			'qualified'                 => (int)$row->qualified,
-	// 			'pickup'                    => (int)$row->pickup,
-	// 			'not_position'              => (int)$row->not_position,
-	// 			'not_qualified_total'       => (int)$row->not_qualified_total,
-	// 			'not_qualified_experience'  => (int)$row->not_qualified_experience,
-	// 			'not_qualified_certificate' => (int)$row->not_qualified_certificate,
-	// 			'not_qualified_interview'   => (int)$row->not_qualified_interview,
-	// 			'not_reference_total'       => (int)$row->not_reference_total,
-	// 			'interview'                 => (int)$row->interview,
-	// 			'mcu'                       => (int)$row->mcu
-	// 		);
-	// 	}
-
-	// 	// echo "<pre>";
-	// 	// print_r($result);
-	// 	// echo "</pre>";
-	// 	// exit;
-
-
-
-	// 	echo json_encode($result);
-	// }
-
-	function getDataApplicantPositionSummaryTalentPool()
+	function getDataApplicantPositionSummaryCombined()
 	{
 		$sql = "
 			SELECT 
 				position_applied,
-				qualified,
-				pickup,
-				not_position,
-				not_qualified_total,
-				not_qualified_experience,
-				not_qualified_certificate,
-				not_qualified_interview,
-				not_reference_total,
-				interview,
-				mcu,
-				(qualified + pickup + not_position + 
-				not_qualified_total + not_reference_total + 
-				interview + mcu) as total
-			FROM (
-				SELECT 
-					position_applied,
-					SUM(CASE WHEN st_data = 0 AND st_qualify = 'Y' AND st_qualify2 = 'N' THEN 1 ELSE 0 END) AS qualified,
-					SUM(CASE WHEN st_data = 1 THEN 1 ELSE 0 END) AS pickup,
-					SUM(CASE WHEN st_data = 2 THEN 1 ELSE 0 END) AS not_position,
-					SUM(CASE WHEN st_data = 3 THEN 1 ELSE 0 END) AS not_qualified_total,
-					SUM(CASE WHEN st_data = 3 AND reason_not_qualified != '' AND reason_not_qualified IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_experience,
-					SUM(CASE WHEN st_data = 3 AND reason_not_qualified_layer1 != '' AND reason_not_qualified_layer1 IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_certificate,
-					SUM(CASE WHEN st_data = 4 AND notReff_reason != '' AND notReff_reason IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_interview,
-					SUM(CASE WHEN st_data = 4 THEN 1 ELSE 0 END) AS not_reference_total,
-					SUM(CASE WHEN st_data = 5 THEN 1 ELSE 0 END) AS interview,
-					SUM(CASE WHEN st_data = 6 THEN 1 ELSE 0 END) AS mcu
-				FROM new_applicant
-				WHERE deletests = 0 
-					AND st_data IN (0,1,2,3,4,5,6)
-					AND position_applied IS NOT NULL
-				GROUP BY position_applied
-			) as subquery
+
+				-- Breakdown status
+				SUM(CASE WHEN st_data = 0 AND st_qualify = 'Y' AND st_qualify2 = 'N' THEN 1 ELSE 0 END) AS qualified,
+				SUM(CASE WHEN st_data = 1 THEN 1 ELSE 0 END) AS pickup,
+				SUM(CASE WHEN st_data = 2 THEN 1 ELSE 0 END) AS not_position,
+				SUM(CASE WHEN st_data = 3 THEN 1 ELSE 0 END) AS not_qualified_total,
+				SUM(CASE WHEN st_data = 3 AND reason_not_qualified != '' AND reason_not_qualified IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_experience,
+				SUM(CASE WHEN st_data = 3 AND reason_not_qualified_layer1 != '' AND reason_not_qualified_layer1 IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_certificate,
+				SUM(CASE WHEN st_data = 4 AND notReff_reason != '' AND notReff_reason IS NOT NULL THEN 1 ELSE 0 END) AS not_qualified_interview,
+				SUM(CASE WHEN st_data = 4 THEN 1 ELSE 0 END) AS not_reference_total,
+				SUM(CASE WHEN st_data = 5 THEN 1 ELSE 0 END) AS interview,
+				SUM(CASE WHEN st_data = 6 THEN 1 ELSE 0 END) AS mcu,
+
+				-- Pastikan total dihitung dengan cara yang sama
+				COUNT(*) AS total
+
+			FROM new_applicant
+			WHERE deletests = 0 
+				AND st_data IN (0,1,2,3,4,5,6)
+				AND position_applied IS NOT NULL
+				-- Tambahkan filter yang sama dengan fungsi lainnya
+				AND (
+					-- Sama seperti kondisi di getDataNewApplicent()
+					(st_data = 0 AND st_qualify = 'N' AND st_qualify2 = 'N')
+					OR
+					-- Sama seperti kondisi di getQualifiedCrew()
+					(st_data = 0 AND st_qualify = 'Y' AND st_qualify2 = 'N' AND position_existing != '')
+					OR
+					-- Sama seperti kondisi di getDataPipelineCrew()
+					(st_data IN (2,3,4,7))
+					OR
+					-- Sama seperti kondisi di getDataInterviewCrew()
+					(st_data = 5)
+					OR
+					-- Sama seperti kondisi di getDataMCUCrew()
+					(st_data = 6)
+				)
+			GROUP BY position_applied
 			ORDER BY total DESC
 		";
 
@@ -240,11 +127,6 @@ class Report extends CI_Controller {
 				'mcu'                       => (int)$row->mcu
 			);
 		}
-
-		// echo "<pre>";
-		// print_r($result);
-		// echo "</pre>";
-		// exit;
 
 		echo json_encode($result);
 	}
@@ -6476,32 +6358,114 @@ class Report extends CI_Controller {
 
 	}
 
-	public function print_form_mlc()
+	// public function print_form_mlc()
+	// {
+	// 	$crew = new stdClass();
+	// 	$crew->idperson = $this->input->get('idperson', TRUE);
+	// 	$crew->fullname = $this->input->get('fullname', TRUE);
+	// 	$crew->nmrank   = $this->input->get('nmrank', TRUE);
+	// 	$crew->signondt = $this->input->get('signondt', TRUE);
+	// 	$crew->nmvsl    = $this->input->get('nmvsl', TRUE);
+
+	// 	if (empty($crew->idperson)) {
+	// 		show_error('ID Person tidak ditemukan');
+	// 		return;
+	// 	}
+
+	// 	$data['crew'] = $crew;
+
+	// 	require("application/views/frontend/pdf/mpdf60/mpdf.php");
+	// 	$mpdf = new mPDF('utf-8', 'A4');
+
+	// 	ob_start();
+	// 	$this->load->view('frontend/form_mlc_pdf', $data);
+	// 	$html = ob_get_contents();
+	//     ob_end_clean();
+
+	// 	$mpdf->WriteHTML(utf8_encode($html));
+	// 	$mpdf->Output("MLC_Form_" . $crew->fullname . ".pdf", 'I');
+	// 	exit;
+	// }
+
+	// public function generate_mlc_pdf()
+	// {
+	// 	// Terima data dari GET/POST - gunakan array() bukan []
+	// 	$checkbox_data = array();
+		
+	// 	// Loop untuk 9 statement
+	// 	for ($i = 1; $i <= 9; $i++) {
+	// 		$value = $this->input->get('statement_' . $i);
+	// 		$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
+	// 	}
+		
+	// 	// Data crew
+	// 	$crew = new stdClass();
+	// 	$crew->idperson = $this->input->get('idperson');
+	// 	$crew->fullname = $this->input->get('fullname');
+	// 	$crew->nmrank = $this->input->get('nmrank');
+	// 	$crew->signondt = $this->input->get('signondt');
+	// 	$crew->nmvsl = $this->input->get('nmvsl');
+		
+	// 	// Gabungkan data - gunakan array() bukan []
+	// 	$data = array(
+	// 		'crew' => $crew,
+	// 		'checkboxes' => $checkbox_data,
+	// 		'all_data' => $_GET // untuk debugging
+	// 	);
+		
+	// 	// Debug
+	// 	echo '<pre>';
+	// 	print_r($data);
+	// 	echo '</pre>';
+	// 	exit; // Hapus ini setelah testing
+		
+	// 	// Lanjutkan generate PDF...
+	// 	// $this->load->view('frontend/pdf_template', $data);
+	// }
+
+	public function generate_mlc_pdf()
 	{
-		$crew = new stdClass();
-		$crew->idperson = $this->input->get('idperson', TRUE);
-		$crew->fullname = $this->input->get('fullname', TRUE);
-		$crew->nmrank   = $this->input->get('nmrank', TRUE);
-		$crew->signondt = $this->input->get('signondt', TRUE);
-		$crew->nmvsl    = $this->input->get('nmvsl', TRUE);
-
-		if (empty($crew->idperson)) {
-			show_error('ID Person tidak ditemukan');
-			return;
+		// Terima data dari GET - gunakan array() bukan []
+		$checkbox_data = array();
+		
+		// Loop untuk 9 statement
+		for ($i = 1; $i <= 9; $i++) {
+			$value = $this->input->get('statement_' . $i);
+			$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
 		}
-
-		$data['crew'] = $crew;
-
-		require("application/views/frontend/pdf/mpdf60/mpdf.php");
+		
+		// Data crew
+		$crew = new stdClass();
+		$crew->idperson = $this->input->get('idperson');
+		$crew->fullname = $this->input->get('fullname');
+		$crew->nmrank = $this->input->get('nmrank');
+		$crew->signondt = $this->input->get('signondt');
+		$crew->nmvsl = $this->input->get('nmvsl');
+		
+		// Gabungkan data - gunakan array() bukan []
+		$data = array(
+			'crew' => $crew,
+			'checkboxes' => $checkbox_data,
+			'all_data' => $_GET // untuk debugging
+		);
+		
+		// Debug - HAPUS setelah testing
+		// echo '<pre>';
+		// print_r($data);
+		// echo '</pre>';
+		// exit;
+		
+		// Lanjutkan generate PDF...
+		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 		$mpdf = new mPDF('utf-8', 'A4');
-
+		
 		ob_start();
 		$this->load->view('frontend/form_mlc_pdf', $data);
-		$html = ob_get_contents();
-	    ob_end_clean();
-
-		$mpdf->WriteHTML(utf8_encode($html));
-		$mpdf->Output("MLC_Form_" . $crew->fullname . ".pdf", 'I');
+		$html = ob_get_clean();
+		
+		$mpdf->WriteHTML($html);
+		$filename = "MLC_Form_" . $crew->fullname . "_" . date('Ymd') . ".pdf";
+		$mpdf->Output($filename, 'I');
 		exit;
 	}
 
