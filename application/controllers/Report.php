@@ -6358,113 +6358,36 @@ class Report extends CI_Controller {
 
 	}
 
-	// public function print_form_mlc()
-	// {
-	// 	$crew = new stdClass();
-	// 	$crew->idperson = $this->input->get('idperson', TRUE);
-	// 	$crew->fullname = $this->input->get('fullname', TRUE);
-	// 	$crew->nmrank   = $this->input->get('nmrank', TRUE);
-	// 	$crew->signondt = $this->input->get('signondt', TRUE);
-	// 	$crew->nmvsl    = $this->input->get('nmvsl', TRUE);
-
-	// 	if (empty($crew->idperson)) {
-	// 		show_error('ID Person tidak ditemukan');
-	// 		return;
-	// 	}
-
-	// 	$data['crew'] = $crew;
-
-	// 	require("application/views/frontend/pdf/mpdf60/mpdf.php");
-	// 	$mpdf = new mPDF('utf-8', 'A4');
-
-	// 	ob_start();
-	// 	$this->load->view('frontend/form_mlc_pdf', $data);
-	// 	$html = ob_get_contents();
-	//     ob_end_clean();
-
-	// 	$mpdf->WriteHTML(utf8_encode($html));
-	// 	$mpdf->Output("MLC_Form_" . $crew->fullname . ".pdf", 'I');
-	// 	exit;
-	// }
-
-	// public function generate_mlc_pdf()
-	// {
-	// 	// Terima data dari GET/POST - gunakan array() bukan []
-	// 	$checkbox_data = array();
-		
-	// 	// Loop untuk 9 statement
-	// 	for ($i = 1; $i <= 9; $i++) {
-	// 		$value = $this->input->get('statement_' . $i);
-	// 		$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
-	// 	}
-		
-	// 	// Data crew
-	// 	$crew = new stdClass();
-	// 	$crew->idperson = $this->input->get('idperson');
-	// 	$crew->fullname = $this->input->get('fullname');
-	// 	$crew->nmrank = $this->input->get('nmrank');
-	// 	$crew->signondt = $this->input->get('signondt');
-	// 	$crew->nmvsl = $this->input->get('nmvsl');
-		
-	// 	// Gabungkan data - gunakan array() bukan []
-	// 	$data = array(
-	// 		'crew' => $crew,
-	// 		'checkboxes' => $checkbox_data,
-	// 		'all_data' => $_GET // untuk debugging
-	// 	);
-		
-	// 	// Debug
-	// 	echo '<pre>';
-	// 	print_r($data);
-	// 	echo '</pre>';
-	// 	exit; // Hapus ini setelah testing
-		
-	// 	// Lanjutkan generate PDF...
-	// 	// $this->load->view('frontend/pdf_template', $data);
-	// }
-
 	public function generate_mlc_pdf()
 	{
-		// Terima data dari GET - gunakan array() bukan []
-		$checkbox_data = array();
 		
-		// Loop untuk 9 statement
+		$checkbox_data = array();
 		for ($i = 1; $i <= 9; $i++) {
-			$value = $this->input->get('statement_' . $i);
-			$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
+			$value = $this->input->post('statement_' . $i);
+			$checkbox_data['statement_' . $i] = ($value === '1') ? 1 : 0;
 		}
 		
-		// Data crew
 		$crew = new stdClass();
-		$crew->idperson = $this->input->get('idperson');
-		$crew->fullname = $this->input->get('fullname');
-		$crew->nmrank = $this->input->get('nmrank');
-		$crew->signondt = $this->input->get('signondt');
-		$crew->nmvsl = $this->input->get('nmvsl');
+		$crew->idperson = $this->input->post('idperson');
+		$crew->fullname = $this->input->post('fullname');
+		$crew->nmrank = $this->input->post('nmrank');
+		$crew->signondt = $this->input->post('signondt');
+		$crew->nmvsl = $this->input->post('nmvsl');
 		
-		// Gabungkan data - gunakan array() bukan []
+		
 		$data = array(
 			'crew' => $crew,
 			'checkboxes' => $checkbox_data,
-			'all_data' => $_GET // untuk debugging
+			'all_data' => $_POST
 		);
-		
-		// Debug - HAPUS setelah testing
-		// echo '<pre>';
-		// print_r($data);
-		// echo '</pre>';
-		// exit;
-		
-		// Lanjutkan generate PDF...
+
 		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 		$mpdf = new mPDF('utf-8', 'A4');
 		
-		ob_start();
-		$this->load->view('frontend/form_mlc_pdf', $data);
-		$html = ob_get_clean();
-		
+		$html = $this->load->view('frontend/form_mlc_pdf', $data, TRUE);
 		$mpdf->WriteHTML($html);
-		$filename = "MLC_Form_" . $crew->fullname . "_" . date('Ymd') . ".pdf";
+		
+		$filename = "MLC_Form_" . $crew->fullname . ".pdf";
 		$mpdf->Output($filename, 'I');
 		exit;
 	}

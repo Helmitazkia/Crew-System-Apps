@@ -3822,114 +3822,82 @@
         });
     }
 
-    function click_print_form_mlc() {
-
-        var idperson = $("#txtIdPerson").val();
-        var name_crew = $("#name-crew-mlc").text();
-        var jabatan_crew = $("#jabatan-crew-mlc").text();
-        var date_crew = $("#date-crew-mlc").text();
-        var vessel_crew = $("#vessel-crew-mlc").text();
-
-        if (!idperson) {
-            alert("Id Person Kosong!");
-            return;
-        }
-
-        var url = "<?php echo base_url('report/print_form_mlc'); ?>?" +
-            "idperson=" + encodeURIComponent(idperson) +
-            "&fullname=" + encodeURIComponent(name_crew) +
-            "&nmrank=" + encodeURIComponent(jabatan_crew) +
-            "&signondt=" + encodeURIComponent(date_crew) +
-            "&nmvsl=" + encodeURIComponent(vessel_crew);
-
-        window.open(url, "_blank");
-    }
-
+    
 
     $(document).ready(function() {
-    // 1. Fungsi untuk handle perubahan checkbox (validasi pilih salah satu)
-    $('.check-box').on('change', function() {
-        const $this = $(this);
-        const isYes = $this.hasClass('yes-checkbox');
-        const pairedName = isYes 
-            ? $this.data('no-checkbox') 
-            : $this.data('yes-checkbox');
-        
-        // Jika checkbox ini dicentang
-        if ($this.is(':checked')) {
-            // Uncheck checkbox pasangannya
-            $(`[name="${pairedName}"]`).prop('checked', false);
-        }
-    });
-    
-    // 2. Fungsi untuk mendapatkan semua nilai checkbox
-    function getAllCheckboxValues() {
-        const values = {};
-        let allFilled = true;
-        const missingStatements = [];
-        
-        // Loop untuk 9 statement
-        for (let i = 1; i <= 9; i++) {
-            const $yesCheckbox = $(`[name="statement_${i}"]`);
-            const $noCheckbox = $(`[name="statement_${i}_no"]`);
+        $('.check-box').on('change', function() {
+            const $this = $(this);
+            const isYes = $this.hasClass('yes-checkbox');
+            const pairedName = isYes 
+                ? $this.data('no-checkbox') 
+                : $this.data('yes-checkbox');
+
+            if ($this.is(':checked')) {
+                $(`[name="${pairedName}"]`).prop('checked', false);
+            }
+        });
+   
+        function getAllCheckboxValues() {
+            const values = {};
+            let allFilled = true;
+            const missingStatements = [];
             
-            // Cek apakah sudah dipilih
-            if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
-                allFilled = false;
-                missingStatements.push(i);
+            for (let i = 1; i <= 9; i++) {
+                const $yesCheckbox = $(`[name="statement_${i}"]`);
+                const $noCheckbox = $(`[name="statement_${i}_no"]`);
+                
+            
+                if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
+                    allFilled = false;
+                    missingStatements.push(i);
+                }
+                
+                values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 : 
+                                        ($noCheckbox.is(':checked') ? 0 : null);
             }
             
-            // Simpan nilai (1 untuk Yes, 0 untuk No, null jika belum dipilih)
-            values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 : 
-                                      ($noCheckbox.is(':checked') ? 0 : null);
+            return {
+                values: values,
+                allFilled: allFilled,
+                missingStatements: missingStatements
+            };
         }
-        
-        return {
-            values: values,
-            allFilled: allFilled,
-            missingStatements: missingStatements
-        };
-    }
     
-    // 3. Fungsi untuk menampilkan nilai di console
+
         function showCheckboxValues() {
             const result = getAllCheckboxValues();
             
-            console.log('=== CHECKBOX VALUES ===');
-            console.log('Nilai per statement:');
+            // console.log('=== CHECKBOX VALUES ===');
+            // console.log('Nilai per statement:');
             
             // Tampilkan dalam format tabel
             for (let i = 1; i <= 9; i++) {
                 const value = result.values[`statement_${i}`];
-                const status = value === 1 ? '✅ Yes (1)' : 
-                            value === 0 ? '❌ No (0)' : 
-                            '⚠️ Belum dipilih';
-                console.log(`Statement ${i}: ${status}`);
+                const status = value === 1 ? 'Yes (1)' : 
+                            value === 0 ? 'No (0)' : 
+                            'Belum dipilih';
+                //console.log(`Statement ${i}: ${status}`);
             }
             
-            // Tampilkan dalam bentuk object
-            console.log('Data Object:', result.values);
+            // // Tampilkan dalam bentuk object
+            // console.log('Data Object:', result.values);
             
-            // Tampilkan summary
-            console.log('Summary:');
-            console.log(`- Total statements: 9`);
-            console.log(`- Terisi: ${Object.values(result.values).filter(v => v !== null).length}`);
-            console.log(`- Belum terisi: ${Object.values(result.values).filter(v => v === null).length}`);
+            // // Tampilkan summary
+            // console.log('Summary:');
+            // console.log(`- Total statements: 9`);
+            // console.log(`- Terisi: ${Object.values(result.values).filter(v => v !== null).length}`);
+            // console.log(`- Belum terisi: ${Object.values(result.values).filter(v => v === null).length}`);
             
             return result;
         }
 
-        // 4. Event handler untuk tombol Print
         $('#btn-print-form-mlc').on('click', function() {
             console.clear(); // Clear console dulu
-            
+        
             const result = getAllCheckboxValues();
-            
-            // Validasi: semua harus dipilih
             if (!result.allFilled) {
                 alert(`Harap pilih semua statement!\n\nStatement yang belum dipilih: ${result.missingStatements.join(', ')}`);
                 
-                // Highlight baris yang belum diisi
                 $('tr').removeClass('missing-row');
                 result.missingStatements.forEach(num => {
                     $(`[name="statement_${num}"]`).closest('tr').addClass('missing-row');
@@ -3938,58 +3906,12 @@
                 return;
             }
             
-            // Tampilkan nilai di console
+         
             showCheckboxValues();            
-            // // Kirim data untuk print
             generatePDF(result.values);
         });
 
-
-        // 5. Fungsi untuk generate PDF (contoh)
-        // function generatePDF(checkboxValues) {
-        //     // Ambil parameter dari URL
-        //     const urlParams = new URLSearchParams(window.location.search);
-        //     var idperson = $("#txtIdPerson").val();
-        //     var name_crew = $("#name-crew-mlc").text();
-        //     var jabatan_crew = $("#jabatan-crew-mlc").text();
-        //     var date_crew = $("#date-crew-mlc").text();
-        //     var vessel_crew = $("#vessel-crew-mlc").text();
-        //     // Gabungkan semua data
-        //     const data = {
-        //         ...checkboxValues,
-        //         idperson: idperson,
-        //         fullname: name_crew,
-        //         nmrank: jabatan_crew
-        //         signondt:date_crew,
-        //         nmvsl: vessel_crew
-        //     };
-            
-        //     console.log('Data untuk dikirim ke server:', data);
-            
-        //     // OPTION A: Redirect ke URL dengan parameter
-        //     const params = new URLSearchParams(data).toString();
-        //     window.open(`report/generate_mlc_pdf?${params}`, '_blank');
-            
-        //     // OPTION B: AJAX request
-            
-        //     $.ajax({
-        //         url: "<?php echo base_url('report/generate_mlc_pdf'); ?>?",
-        //         type: 'POST',
-        //         data: data,
-        //         success: function(response) {
-        //             if (response.success) {
-        //                 window.open(response.pdf_url, '_blank');
-        //             } else {
-        //                 alert('Error: ' + response.message);
-        //             }
-        //         }
-        //     });
-            
-        // }
-
         function generatePDF(checkboxValues) {
-            // Ambil parameter dari URL
-            const urlParams = new URLSearchParams(window.location.search);
             var idperson = $("#txtIdPerson").val();
             var name_crew = $("#name-crew-mlc").text();
             var jabatan_crew = $("#jabatan-crew-mlc").text();
@@ -4006,15 +3928,50 @@
                 nmvsl: vessel_crew
             };
             
-            console.log('Data untuk dikirim ke server:', data);
-            
-            // OPTION A: Redirect ke URL dengan parameter
-            const params = new URLSearchParams(data).toString();
-            window.open(`<?php echo base_url(); ?>report/generate_mlc_pdf?${params}`, '_blank');
+            // console.log('Data untuk dikirim ke server:', data);
+            submitPostData(data);
         }
 
-       
-
+        function submitPostData(data) {
+            const form = document.createElement('form');
+            form.id = 'tempMlcForm';
+            form.method = 'POST';
+            form.action = '<?php echo base_url("report/generate_mlc_pdf"); ?>';
+            form.target = '_blank';
+            form.style.display = 'none';
+            
+            // Tambahkan data
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key];
+                form.appendChild(input);
+            });
+            
+            
+            const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
+            const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
+            
+            if (csrfName && csrfHash) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = csrfName;
+                csrfInput.value = csrfHash;
+                form.appendChild(csrfInput);
+            }
+            
+            // Tambahkan ke body dan submit
+            document.body.appendChild(form);
+            form.submit();
+            
+            // Cleanup setelah 1 detik
+            setTimeout(() => {
+                if (document.getElementById('tempMlcForm')) {
+                    document.body.removeChild(form);
+                }
+            }, 1000);
+        }
 
     });
     </script>
