@@ -3785,6 +3785,7 @@
         }
     }
 
+    /*Print Form Mlc start */
     function click_form_mlc() {
         var get_idperson = $("#txtIdPerson").val();
 
@@ -3822,180 +3823,102 @@
         });
     }
 
-    function click_print_form_mlc() {
-
-        var idperson = $("#txtIdPerson").val();
-        var name_crew = $("#name-crew-mlc").text();
-        var jabatan_crew = $("#jabatan-crew-mlc").text();
-        var date_crew = $("#date-crew-mlc").text();
-        var vessel_crew = $("#vessel-crew-mlc").text();
-
-        if (!idperson) {
-            alert("Id Person Kosong!");
-            return;
-        }
-
-        var url = "<?php echo base_url('report/print_form_mlc'); ?>?" +
-            "idperson=" + encodeURIComponent(idperson) +
-            "&fullname=" + encodeURIComponent(name_crew) +
-            "&nmrank=" + encodeURIComponent(jabatan_crew) +
-            "&signondt=" + encodeURIComponent(date_crew) +
-            "&nmvsl=" + encodeURIComponent(vessel_crew);
-
-        window.open(url, "_blank");
-    }
-
-
     $(document).ready(function() {
-    // 1. Fungsi untuk handle perubahan checkbox (validasi pilih salah satu)
-    $('.check-box').on('change', function() {
-        const $this = $(this);
-        const isYes = $this.hasClass('yes-checkbox');
-        const pairedName = isYes 
-            ? $this.data('no-checkbox') 
-            : $this.data('yes-checkbox');
-        
-        // Jika checkbox ini dicentang
-        if ($this.is(':checked')) {
-            // Uncheck checkbox pasangannya
-            $(`[name="${pairedName}"]`).prop('checked', false);
-        }
-    });
-    
-    // 2. Fungsi untuk mendapatkan semua nilai checkbox
-    function getAllCheckboxValues() {
-        const values = {};
-        let allFilled = true;
-        const missingStatements = [];
-        
-        // Loop untuk 9 statement
-        for (let i = 1; i <= 9; i++) {
-            const $yesCheckbox = $(`[name="statement_${i}"]`);
-            const $noCheckbox = $(`[name="statement_${i}_no"]`);
-            
-            // Cek apakah sudah dipilih
-            if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
-                allFilled = false;
-                missingStatements.push(i);
+        $('.check-box').on('change', function() {
+            const $this = $(this);
+            const isYes = $this.hasClass('yes-checkbox');
+            const pairedName = isYes ?
+                $this.data('no-checkbox') :
+                $this.data('yes-checkbox');
+
+            if ($this.is(':checked')) {
+                $(`[name="${pairedName}"]`).prop('checked', false);
             }
-            
-            // Simpan nilai (1 untuk Yes, 0 untuk No, null jika belum dipilih)
-            values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 : 
-                                      ($noCheckbox.is(':checked') ? 0 : null);
+        });
+
+        function getAllCheckboxValues() {
+            const values = {};
+            let allFilled = true;
+            const missingStatements = [];
+
+            for (let i = 1; i <= 9; i++) {
+                const $yesCheckbox = $(`[name="statement_${i}"]`);
+                const $noCheckbox = $(`[name="statement_${i}_no"]`);
+
+
+                if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
+                    allFilled = false;
+                    missingStatements.push(i);
+                }
+
+                values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 :
+                    ($noCheckbox.is(':checked') ? 0 : null);
+            }
+
+            return {
+                values: values,
+                allFilled: allFilled,
+                missingStatements: missingStatements
+            };
         }
-        
-        return {
-            values: values,
-            allFilled: allFilled,
-            missingStatements: missingStatements
-        };
-    }
-    
-    // 3. Fungsi untuk menampilkan nilai di console
+
+
         function showCheckboxValues() {
             const result = getAllCheckboxValues();
-            
-            console.log('=== CHECKBOX VALUES ===');
-            console.log('Nilai per statement:');
-            
+
+            // console.log('=== CHECKBOX VALUES ===');
+            // console.log('Nilai per statement:');
+
             // Tampilkan dalam format tabel
             for (let i = 1; i <= 9; i++) {
                 const value = result.values[`statement_${i}`];
-                const status = value === 1 ? '✅ Yes (1)' : 
-                            value === 0 ? '❌ No (0)' : 
-                            '⚠️ Belum dipilih';
-                console.log(`Statement ${i}: ${status}`);
+                const status = value === 1 ? 'Yes (1)' :
+                    value === 0 ? 'No (0)' :
+                    'Belum dipilih';
+                //console.log(`Statement ${i}: ${status}`);
             }
-            
-            // Tampilkan dalam bentuk object
-            console.log('Data Object:', result.values);
-            
-            // Tampilkan summary
-            console.log('Summary:');
-            console.log(`- Total statements: 9`);
-            console.log(`- Terisi: ${Object.values(result.values).filter(v => v !== null).length}`);
-            console.log(`- Belum terisi: ${Object.values(result.values).filter(v => v === null).length}`);
-            
+
+            // // Tampilkan dalam bentuk object
+            // console.log('Data Object:', result.values);
+
+            // // Tampilkan summary
+            // console.log('Summary:');
+            // console.log(`- Total statements: 9`);
+            // console.log(`- Terisi: ${Object.values(result.values).filter(v => v !== null).length}`);
+            // console.log(`- Belum terisi: ${Object.values(result.values).filter(v => v === null).length}`);
+
             return result;
         }
 
-        // 4. Event handler untuk tombol Print
         $('#btn-print-form-mlc').on('click', function() {
             console.clear(); // Clear console dulu
-            
+
             const result = getAllCheckboxValues();
-            
-            // Validasi: semua harus dipilih
             if (!result.allFilled) {
-                alert(`Harap pilih semua statement!\n\nStatement yang belum dipilih: ${result.missingStatements.join(', ')}`);
-                
-                // Highlight baris yang belum diisi
+                alert(
+                    `Harap pilih semua statement!\n\nStatement yang belum dipilih: ${result.missingStatements.join(', ')}`
+                );
+
                 $('tr').removeClass('missing-row');
                 result.missingStatements.forEach(num => {
                     $(`[name="statement_${num}"]`).closest('tr').addClass('missing-row');
                 });
-                
+
                 return;
             }
-            
-            // Tampilkan nilai di console
-            showCheckboxValues();            
-            // // Kirim data untuk print
+
+
+            showCheckboxValues();
             generatePDF(result.values);
         });
 
-
-        // 5. Fungsi untuk generate PDF (contoh)
-        // function generatePDF(checkboxValues) {
-        //     // Ambil parameter dari URL
-        //     const urlParams = new URLSearchParams(window.location.search);
-        //     var idperson = $("#txtIdPerson").val();
-        //     var name_crew = $("#name-crew-mlc").text();
-        //     var jabatan_crew = $("#jabatan-crew-mlc").text();
-        //     var date_crew = $("#date-crew-mlc").text();
-        //     var vessel_crew = $("#vessel-crew-mlc").text();
-        //     // Gabungkan semua data
-        //     const data = {
-        //         ...checkboxValues,
-        //         idperson: idperson,
-        //         fullname: name_crew,
-        //         nmrank: jabatan_crew
-        //         signondt:date_crew,
-        //         nmvsl: vessel_crew
-        //     };
-            
-        //     console.log('Data untuk dikirim ke server:', data);
-            
-        //     // OPTION A: Redirect ke URL dengan parameter
-        //     const params = new URLSearchParams(data).toString();
-        //     window.open(`report/generate_mlc_pdf?${params}`, '_blank');
-            
-        //     // OPTION B: AJAX request
-            
-        //     $.ajax({
-        //         url: "<?php echo base_url('report/generate_mlc_pdf'); ?>?",
-        //         type: 'POST',
-        //         data: data,
-        //         success: function(response) {
-        //             if (response.success) {
-        //                 window.open(response.pdf_url, '_blank');
-        //             } else {
-        //                 alert('Error: ' + response.message);
-        //             }
-        //         }
-        //     });
-            
-        // }
-
         function generatePDF(checkboxValues) {
-            // Ambil parameter dari URL
-            const urlParams = new URLSearchParams(window.location.search);
             var idperson = $("#txtIdPerson").val();
             var name_crew = $("#name-crew-mlc").text();
             var jabatan_crew = $("#jabatan-crew-mlc").text();
             var date_crew = $("#date-crew-mlc").text();
             var vessel_crew = $("#vessel-crew-mlc").text();
-            
+
             // Gabungkan semua data
             const data = {
                 ...checkboxValues,
@@ -4005,18 +3928,206 @@
                 signondt: date_crew,
                 nmvsl: vessel_crew
             };
-            
-            console.log('Data untuk dikirim ke server:', data);
-            
-            // OPTION A: Redirect ke URL dengan parameter
-            const params = new URLSearchParams(data).toString();
-            window.open(`<?php echo base_url(); ?>report/generate_mlc_pdf?${params}`, '_blank');
+
+            // console.log('Data untuk dikirim ke server:', data);
+            submitPostData(data);
         }
 
-       
+        function submitPostData(data) {
+            const form = document.createElement('form');
+            form.id = 'tempMlcForm';
+            form.method = 'POST';
+            form.action = '<?php echo base_url("report/generate_mlc_pdf"); ?>';
+            form.target = '_blank';
+            form.style.display = 'none';
+
+            // Tambahkan data
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key];
+                form.appendChild(input);
+            });
 
 
+            const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
+            const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
+
+            if (csrfName && csrfHash) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = csrfName;
+                csrfInput.value = csrfHash;
+                form.appendChild(csrfInput);
+            }
+
+            // Tambahkan ke body dan submit
+            document.body.appendChild(form);
+            form.submit();
+
+            // Cleanup setelah 1 detik
+            setTimeout(() => {
+                if (document.getElementById('tempMlcForm')) {
+                    document.body.removeChild(form);
+                }
+            }, 1000);
+        }
     });
+
+    /*Print Form Mlc End */
+
+
+    /*Print Form defbreafing Start */
+
+    function generateBreafingPDF() {
+        var idperson = $("#txtIdPerson").val();
+        console.log(idperson);
+
+        const data = {
+            idperson: idperson
+        };
+
+        submitPostData_Breafing(data);
+    }
+
+        $(document).ready(function () {
+            $('#btn-form-bereafing').on('click', function () {
+                console.clear();
+                generateBreafingPDF(); // ✅ sekarang kebaca
+            });
+        });
+
+        function click_form_defbreafing() {
+            var get_idperson = $("#txtIdPerson").val();
+
+            if (!get_idperson) {
+                alert("Person Empty!");
+                return;
+            }
+
+            $("#modal-form-debriefing").modal("show");
+
+            $.ajax({
+                url: "<?php echo base_url('report/get_data_form_defbreafing'); ?>",
+                type: "POST",
+                data: {
+                    idperson: get_idperson
+                },
+                dataType: "json",
+                success: function(res) {
+                    // console.log(res);
+                    if (!res.success || !res.data) {
+                        alert("Data tidak ditemukan!");
+                        return;
+                    }
+
+                    // // // Contoh isi ke HTML
+                    $("#val-vessel-defbreafing").text(res.data[0].nama_kapal);
+                    $("#val-palabuhan-defbreafing").text(res.data[0].pelabuhan);
+                    $("#val-jabatan-defbreafing").text(res.data[0].jabatan);
+                    $("#val-telp-defbreafing").text(res.data[0].no_telp);
+                    $("#val-namecrew-defbreafing").text(res.data[0].nama_crew);
+                    $("#val-tgljoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));
+                    $("#val-tglsignoff-defbreafing").val(formatDateToInput(res.data[0].tgl_signoff));
+                    $("#val-siapjoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));  
+                   
+                },
+                error: function(xhr, status, error) {
+                    console.log("AJAX Error:", xhr.responseText);
+                    alert("Error fetching data.");
+                }
+            });
+        }
+
+        function formatDateToInput(dateStr) {
+            if (!dateStr) return '';
+
+                const d = new Date(dateStr);
+                if (isNaN(d)) return '';
+
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day   = String(d.getDate()).padStart(2, '0');
+                const year  = d.getFullYear();
+
+            return `${year}-${month}-${day}`;
+        }
+
+
+        function generateBreafingPDF() {
+
+            var idperson = $("#txtIdPerson").val();
+
+            if (!idperson) {
+                alert("ID Person kosong!");
+                return;
+            }
+
+            // Ambil data dari tampilan (pakai .text())
+            const data = {
+                idperson: idperson,
+                vessel     : $("#val-vessel-defbreafing").text(),
+                pelabuhan  : $("#val-palabuhan-defbreafing").text(),
+                jabatan    : $("#val-jabatan-defbreafing").text(),
+                no_telp    : $("#val-telp-defbreafing").text(),
+                nama_crew  : $("#val-namecrew-defbreafing").text(),
+                tgl_join   : $("#val-tgljoin-defbreafing").val(),
+                tgl_signoff: $("#val-tglsignoff-defbreafing").val(),
+                siap_join  : $("#val-siapjoin-defbreafing").val(),
+                certificates: $("#certificates-input-document").val()
+            };
+
+            console.log("Data dikirim ke server:", data);
+
+            submitPostData_Breafing(data);
+        }
+
+
+        function submitPostData_Breafing(data) {
+            const form = document.createElement('form');
+            form.id = 'tempBreafingForm';
+            form.method = 'POST';
+            form.action = '<?php echo base_url("report/generatePDF_Breafing"); ?>';
+            form.target = '_blank';
+            form.style.display = 'none';
+
+            // Tambahkan data
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key];
+                form.appendChild(input);
+            });
+
+
+            const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
+            const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
+
+            if (csrfName && csrfHash) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = csrfName;
+                csrfInput.value = csrfHash;
+                form.appendChild(csrfInput);
+            }
+
+            // Tambahkan ke body dan submit
+            document.body.appendChild(form);
+            form.submit();
+
+            // Cleanup setelah 1 detik
+            setTimeout(() => {
+                if (document.getElementById('tempBreafingForm')) {
+                    document.body.removeChild(form);
+                }
+            }, 1000);
+        }
+
+    
+
+
+
     </script>
 </head>
 
@@ -4114,6 +4225,151 @@
 }
 </style>
 
+<style>
+    .debriefing-body {
+        font-family: "Times New Roman", serif;
+        font-size: 13px;
+        padding: 25px;
+    }
+
+    .debriefing-container {
+        width: 100%;
+        border: 1px solid #000;
+        padding: 15px;
+        background-color: white;
+    }
+
+    .debriefing-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .info-table td {
+        padding: 6px 4px;
+        vertical-align: top;
+    }
+
+    .label {
+        width: 200px;
+    }
+
+    .line {
+        border-bottom: 1px solid #000;
+        height: 18px;
+    }
+
+    .section-title {
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    .question-table th,
+    .question-table td {
+        border: 1px solid #000;
+        padding: 8px;
+        vertical-align: top;
+    }
+
+    .question-table th {
+        text-align: center;
+    }
+
+    .answer-box {
+        height: 60px;
+        background-color: #f8f9fa;
+    }
+
+    .remarks-box {
+        width: 100%;
+        height: 70px;
+        border: 1px solid #000;
+        margin-bottom: 14px;
+        background-color: #f8f9fa;
+    }
+
+    .signature-table td {
+        height: 90px;
+        vertical-align: bottom;
+        text-align: center;
+        width: 33.33%;
+        border-top: 1px solid #000;
+        padding-top: 10px;
+    }
+
+    .footer {
+        margin-top: 20px;
+        font-size: 11px;
+    }
+
+    /* Modal khusus untuk form debriefing */
+    .debriefing-modal .modal-dialog {
+        max-width: 90%;
+        width: 1000px;
+    }
+
+    .debriefing-modal .modal-content {
+        min-height: 90vh;
+    }
+
+    .debriefing-modal .modal-body {
+        padding: 0;
+    }
+
+    @media print {
+
+        .modal-header,
+        .modal-footer {
+            display: none !important;
+        }
+
+        .modal-dialog {
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+
+        .modal-content {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .modal-body {
+            padding: 0 !important;
+        }
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-center {
+        text-align: center;
+        flex-grow: 1;
+    }
+
+    .header-right {
+        text-align: right;
+    }
+
+    .company-logo {
+        width: 80px;
+        height: auto;
+    }
+
+    .cert-logos {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-end;
+        margin-top: 5px;
+    }
+
+    .cert-logos img {
+        width: 60px;
+        height: auto;
+    }
+</style>
+
 <body>
 
     <div class="container-fluid" style="background-color:#D4D4D4;min-height:500px;">
@@ -4194,7 +4450,7 @@
                                 <div class="col-md-3">
                                     <button class="btn btn-primary btn-sm btn-block" title="Cetak"
                                         onclick="printDataPrincipal();" id="btnPrintPrincipal">
-                                        <i class="fa fa-print"></i> PRINT
+                                        <i class="fa fa-print"></i> Print CV
                                     </button>
                                 </div>
                                 <div class="col-md-3">
@@ -4230,25 +4486,25 @@
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakWagesCrew();" id="btnWagesCrew">
-                                        <i class="fa fa-print"></i> Print Wages
+                                        <i class="fa fa-print"></i> Print Statement Of Wages
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakSPJCrew();" id="btnSPJCrew">
-                                        <i class="fa fa-print"></i> Print SPJ
+                                        <i class="fa fa-print"></i> Print Official Travel Letter
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakDataBankCrew();" id="btnStatementCrew">
-                                        <i class="fa fa-print"></i> Print DataBank Statement
+                                        <i class="fa fa-print"></i> Print Data Bank Crew
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakIntroduction();" id="btnIntroductionCrew">
-                                        <i class="fa fa-print"></i> Print Instruction Letter
+                                        <i class="fa fa-print"></i> Print Instroduction Letter
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
@@ -4289,8 +4545,14 @@
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="click_form_mlc();" id="btnIntroductionCrew">
+                                        onclick="click_form_mlc();">
                                         <i class="fa fa-print"></i> Print Form MLC
+                                    </button>
+                                </div>
+                                 <div class="col-md-3" style="margin-top: 10px;">
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak"
+                                        onclick="click_form_defbreafing();">
+                                        <i class="fa fa-print"></i> Print Form Debriefing
                                     </button>
                                 </div>
                             </div>
@@ -6580,7 +6842,7 @@
             </div>
             <div class="modal-footer">
                 <input type="hidden" id="txtIdPerson" value="">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrint">Print</button>
             </div>
         </div>
@@ -6803,7 +7065,7 @@
             </div>
 
             <div class="modal-footer" style="border-top:1px solid #ccc;padding:10px 20px;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrintWages">Print</button>
             </div>
         </div>
@@ -6961,7 +7223,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveSPJ">Save & Print</button>
             </div>
 
@@ -7108,7 +7370,7 @@
             </div>
 
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrintStatement">Print</button>
             </div>
 
@@ -7316,7 +7578,7 @@
             </div>
 
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <input type="hidden" id="hid_entitas">
                 <input type="hidden" id="hid_vessel">
                 <input type="hidden" id="hid_port">
@@ -7667,7 +7929,7 @@
             </div>
             <hr>
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrintStatementCrew">Print</button>
             </div>
 
@@ -8077,7 +8339,7 @@
                 </table>
             </div>
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnPrintPrevention">Print</button>
             </div>
         </div>
@@ -8431,7 +8693,7 @@
                 </tr>
             </table>
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="printCrewStatement">Print</button>
             </div>
         </div>
@@ -8992,6 +9254,7 @@
                                 <th rowspan="2" style="text-align:center;">No</th>
                                 <th rowspan="2" style="text-align:center;">Crew Name</th>
                                 <th rowspan="2" style="text-align:center;">Rank</th>
+                                <th rowspan="2" style="text-align:center;">Vessel Name</th>
                                 <th colspan="3" style="text-align:center;">Date</th>
                                 <th colspan="4" style="text-align:center;">Approve</th>
                             </tr>
@@ -9055,7 +9318,7 @@
                         <th class="col-yes">Yes<br>Ya</th>
                         <th class="col-no-check">No<br>Tidak</th>
                     </tr>
-                     <tr>
+                    <tr>
                         <td class="col-no">1</td>
                         <td class="col-statement">
                             All items contained in my employment contract have been explained to me and I am aware of
@@ -9066,10 +9329,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_1" value="1" data-no-checkbox="statement_1_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_1" value="1"
+                                data-no-checkbox="statement_1_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_1_no" value="0" data-yes-checkbox="statement_1">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_1_no" value="0"
+                                data-yes-checkbox="statement_1">
                         </td>
                     </tr>
                     <tr>
@@ -9084,10 +9349,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_2" value="1" data-no-checkbox="statement_2_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_2" value="1"
+                                data-no-checkbox="statement_2_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_2_no" value="0" data-yes-checkbox="statement_2">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_2_no" value="0"
+                                data-yes-checkbox="statement_2">
                         </td>
                     </tr>
                     <tr>
@@ -9101,10 +9368,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_3" value="1" data-no-checkbox="statement_3_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_3" value="1"
+                                data-no-checkbox="statement_3_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_3_no" value="0" data-yes-checkbox="statement_3">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_3_no" value="0"
+                                data-yes-checkbox="statement_3">
                         </td>
                     </tr>
                     <tr>
@@ -9118,10 +9387,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_4" value="1" data-no-checkbox="statement_4_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_4" value="1"
+                                data-no-checkbox="statement_4_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_4_no" value="0" data-yes-checkbox="statement_4">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_4_no" value="0"
+                                data-yes-checkbox="statement_4">
                         </td>
                     </tr>
                     <tr>
@@ -9135,10 +9406,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_5" value="1" data-no-checkbox="statement_5_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_5" value="1"
+                                data-no-checkbox="statement_5_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_5_no" value="0" data-yes-checkbox="statement_5">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_5_no" value="0"
+                                data-yes-checkbox="statement_5">
                         </td>
                     </tr>
                     <tr>
@@ -9153,10 +9426,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_6" value="1" data-no-checkbox="statement_6_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_6" value="1"
+                                data-no-checkbox="statement_6_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_6_no" value="0" data-yes-checkbox="statement_6">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_6_no" value="0"
+                                data-yes-checkbox="statement_6">
                         </td>
                     </tr>
                     <tr>
@@ -9169,10 +9444,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_7" value="1" data-no-checkbox="statement_7_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_7" value="1"
+                                data-no-checkbox="statement_7_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_7_no" value="0" data-yes-checkbox="statement_7">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_7_no" value="0"
+                                data-yes-checkbox="statement_7">
                         </td>
                     </tr>
                     <tr>
@@ -9186,10 +9463,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_8" value="1" data-no-checkbox="statement_8_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_8" value="1"
+                                data-no-checkbox="statement_8_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_8_no" value="0" data-yes-checkbox="statement_8">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_8_no" value="0"
+                                data-yes-checkbox="statement_8">
                         </td>
                     </tr>
                     <tr>
@@ -9203,10 +9482,12 @@
                             </div>
                         </td>
                         <td class="col-yes">
-                            <input type="checkbox" class="check-box yes-checkbox" name="statement_9" value="1" data-no-checkbox="statement_9_no">
+                            <input type="checkbox" class="check-box yes-checkbox" name="statement_9" value="1"
+                                data-no-checkbox="statement_9_no">
                         </td>
                         <td class="col-no-check">
-                            <input type="checkbox" class="check-box no-checkbox" name="statement_9_no" value="0" data-yes-checkbox="statement_9">
+                            <input type="checkbox" class="check-box no-checkbox" name="statement_9_no" value="0"
+                                data-yes-checkbox="statement_9">
                         </td>
                     </tr>
                 </table>
@@ -9307,7 +9588,7 @@
                 </div>
                 <div class="modal-footer">
                     <input type="hidden" id="txtIdPerson" value="">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                     <button type="button" class="btn btn-primary" id="btn-print-form-mlc"
                         onclick="click_print_sdfsdf()">Print</button>
                 </div>
@@ -9316,4 +9597,193 @@
         </div>
     </div>
 
+
+
+     <div class="modal fade debriefing-modal" id="modal-form-debriefing" tabindex="-1"
+        aria-labelledby="debriefingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body p-0">
+                    <div class="debriefing-body">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tr>
+                                <td style="width:90px; vertical-align:top;">
+                                    <img src="<?php echo base_url('assets/img/Logo_Andhika_2017.jpg'); ?>" style="width:80px;">
+                                </td>
+
+                                <td style="text-align:center; vertical-align:middle;">
+                                    <div style="font-size:20px; font-weight:bold; margin-top:1px;margin-left:70px;margin-top:80px;">DEBRIEFING </div>
+                                     <div class="long-line-header"
+                                      style="width: 20%;border-bottom: 1px solid #000;margin-left:310px;"></div>
+                                    <br>
+                                </td>
+
+                                <td style="width:170px; text-align:right; vertical-align:top;">
+                                    <div style="font-size:11px; font-weight:bold;">SRPS LICENSE NO:</div>
+                                    <div style="font-size:10px;">SIUPPAK 12.12 Tahun 2014</div>
+                                    <div style="margin-top:5px;">
+                                        <img src="<?php echo base_url('assets/img/Bureau_Veritas_Logo.jpg'); ?>"
+                                            style="width:60px; margin-right:3px;">
+                                        <img src="<?php echo base_url('assets/img/Iso.jpg'); ?>" style="width:60px;">
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+
+                            <table class="data-utama-table"
+                                style="width:100%; border-collapse:collapse; margin-top:15px;" border="0">
+                                <tr>
+                                    <td style="width:25%; font-weight:bold;">Nama Kapal</td>
+                                    <td style="width:25%;">:<smal id="val-vessel-defbreafing" style="padding:7px;"></smal></td>
+                                    <td style="width:25%; font-weight:bold;">Pelabuhan</td>
+                                    <td style="width:25%;">:<smal id="val-palabuhan-defbreafing" style="padding:7px;"></smal></td>
+                                </tr>
+
+                                <tr>
+                                    <td style="font-weight:bold;">Jabatan</td>
+                                    <td>:<smal id="val-jabatan-defbreafing" style="padding:7px;"></smal></td>
+                                    <td style="font-weight:bold;">No. Telepon / HP</td>
+                                    <td>:<smal id="val-telp-defbreafing" style="padding:7px;"></smal></td>
+                                </tr>
+
+                                <tr>
+                                    <td style="font-weight:bold;">Nama Crew</td>
+                                    <td>:<smal id="val-namecrew-defbreafing" style="padding:7px;"></smal></td>
+                                </tr>
+
+                                <tr>
+                                    <td style="font-weight:bold;">Tgl. Join</td>
+                                    <td>:<input type="date" id="val-tgljoin-defbreafing" style="margin-top: 10px;margin-left:4px;width: 95%;" ></input></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td style="font-weight:bold;">Tgl. Sign Off</td>
+                                    <td>:<input type="date" id="val-tglsignoff-defbreafing" style="margin-top: 10px;margin-left:4px;width: 95%;"></input></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td style="font-weight:bold;">Kesiapan Join</td>
+                                    <td>:<input  type="date" id="val-siapjoin-defbreafing" style="margin-top: 10px;margin-left:4px; width: 95%;"></input></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </table>
+
+
+                            <!-- CERTIFICATE -->
+                            <div class="section-title">
+                                Certificates and documents yang harus diperbaharui atau dilengkapi :
+                            </div>
+                            <div class="remarks-box"><textarea  type="text" id="certificates-input-document" style="width: 100%;height: 70px;"></textarea></div>
+
+                            <!-- PERTANYAAN -->
+                            <table class="question-table" style="margin-top:15px;">
+                                <tr>
+                                    <th style="width:40px;">No</th>
+                                    <th>Pertanyaan</th>
+                                    <th style="width:45%;">Jawaban</th>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">1</td>
+                                    <td>Apa rencana kegiatan anda selama masa cuti?</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">2</td>
+                                    <td>Seperti apa dan bagaimana penerapan kesehatan, keselamatan dan keamanan kerja di
+                                        kapal?</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">3</td>
+                                    <td>Training crew apa saja yang dilakukan di kapal?</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">4</td>
+                                    <td>
+                                        Masalah-masalah apa yang anda hadapi di kapal dan bagaimana penyelesaiannya?
+                                        <br><br>
+                                        <strong>Masalah :</strong><br><br>
+                                        <strong>Penyelesaian :</strong>
+                                    </td>
+                                    <td class="answer-box"></td>
+                                </tr>
+                                <tr>
+                                    <td align="center">5</td>
+                                    <td>Bagaimana kondisi kerja tim di kapal?</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">6</td>
+                                    <td>Berikan tanggapan anda mengenai kebersihan di atas kapal.</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">7</td>
+                                    <td>Berikan tanggapan anda mengenai makanan di atas kapal.</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">8</td>
+                                    <td>Bagaimana kondisi kesehatan anda saat ini / setelah sign off?</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center">9</td>
+                                    <td>Sebutkan harapan dan saran anda.</td>
+                                    <td class="answer-box"></td>
+                                </tr>
+                            </table>
+
+                            <!-- REMARKS -->
+                            <div class="section-title">
+                                Remarks / Comment :
+                                <br><em>*diisi oleh crew executive</em>
+                            </div>
+                            <div class="remarks-box"></div>
+
+                            <!-- TANDA TANGAN -->
+                            <table class="info-table" style="margin-top:15px;">
+                                <tr>
+                                    <td class="label" style="color:black;font-size:13px;">Tanggal : <small><?php echo date("d M Y", strtotime(date('Y-m-d'))); ?></small></td>
+                                </tr>
+                            </table>
+
+                            <table class="signature-table" style="margin-top:25px; width:100%;">
+                                <tr>
+                                    <td>Crew Manager</td>
+                                    <td>Crew Executive</td>
+                                    <td>Seafarer</td>
+                                </tr>
+                            </table>
+
+                            <div class="footer">
+                                CD. 42 / 1-03-2017
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
+                        <button type="button" class="btn btn-primary" id="btn-form-bereafing">
+                            <i class="bi bi-printer"></i> Print
+                        </button>
+                    </div>
+                </div>
+           
+            </div>
+        </div>
+    </div>
 </html>

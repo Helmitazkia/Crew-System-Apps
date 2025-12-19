@@ -6308,7 +6308,7 @@ class Report extends CI_Controller {
 
 	function get_data_form_mlc()
 	{
-		// Validasi parameter
+
 		$idperson = $this->input->post("idperson", true);
 		
 		$sql = "
@@ -6358,113 +6358,122 @@ class Report extends CI_Controller {
 
 	}
 
-	// public function print_form_mlc()
-	// {
-	// 	$crew = new stdClass();
-	// 	$crew->idperson = $this->input->get('idperson', TRUE);
-	// 	$crew->fullname = $this->input->get('fullname', TRUE);
-	// 	$crew->nmrank   = $this->input->get('nmrank', TRUE);
-	// 	$crew->signondt = $this->input->get('signondt', TRUE);
-	// 	$crew->nmvsl    = $this->input->get('nmvsl', TRUE);
-
-	// 	if (empty($crew->idperson)) {
-	// 		show_error('ID Person tidak ditemukan');
-	// 		return;
-	// 	}
-
-	// 	$data['crew'] = $crew;
-
-	// 	require("application/views/frontend/pdf/mpdf60/mpdf.php");
-	// 	$mpdf = new mPDF('utf-8', 'A4');
-
-	// 	ob_start();
-	// 	$this->load->view('frontend/form_mlc_pdf', $data);
-	// 	$html = ob_get_contents();
-	//     ob_end_clean();
-
-	// 	$mpdf->WriteHTML(utf8_encode($html));
-	// 	$mpdf->Output("MLC_Form_" . $crew->fullname . ".pdf", 'I');
-	// 	exit;
-	// }
-
-	// public function generate_mlc_pdf()
-	// {
-	// 	// Terima data dari GET/POST - gunakan array() bukan []
-	// 	$checkbox_data = array();
-		
-	// 	// Loop untuk 9 statement
-	// 	for ($i = 1; $i <= 9; $i++) {
-	// 		$value = $this->input->get('statement_' . $i);
-	// 		$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
-	// 	}
-		
-	// 	// Data crew
-	// 	$crew = new stdClass();
-	// 	$crew->idperson = $this->input->get('idperson');
-	// 	$crew->fullname = $this->input->get('fullname');
-	// 	$crew->nmrank = $this->input->get('nmrank');
-	// 	$crew->signondt = $this->input->get('signondt');
-	// 	$crew->nmvsl = $this->input->get('nmvsl');
-		
-	// 	// Gabungkan data - gunakan array() bukan []
-	// 	$data = array(
-	// 		'crew' => $crew,
-	// 		'checkboxes' => $checkbox_data,
-	// 		'all_data' => $_GET // untuk debugging
-	// 	);
-		
-	// 	// Debug
-	// 	echo '<pre>';
-	// 	print_r($data);
-	// 	echo '</pre>';
-	// 	exit; // Hapus ini setelah testing
-		
-	// 	// Lanjutkan generate PDF...
-	// 	// $this->load->view('frontend/pdf_template', $data);
-	// }
-
 	public function generate_mlc_pdf()
 	{
-		// Terima data dari GET - gunakan array() bukan []
-		$checkbox_data = array();
 		
-		// Loop untuk 9 statement
+		$checkbox_data = array();
 		for ($i = 1; $i <= 9; $i++) {
-			$value = $this->input->get('statement_' . $i);
-			$checkbox_data['statement_' . $i] = ($value === '1') ? 'Yes' : 'No';
+			$value = $this->input->post('statement_' . $i);
+			$checkbox_data['statement_' . $i] = ($value === '1') ? 1 : 0;
 		}
 		
-		// Data crew
 		$crew = new stdClass();
-		$crew->idperson = $this->input->get('idperson');
-		$crew->fullname = $this->input->get('fullname');
-		$crew->nmrank = $this->input->get('nmrank');
-		$crew->signondt = $this->input->get('signondt');
-		$crew->nmvsl = $this->input->get('nmvsl');
+		$crew->idperson = $this->input->post('idperson');
+		$crew->fullname = $this->input->post('fullname');
+		$crew->nmrank = $this->input->post('nmrank');
+		$crew->signondt = $this->input->post('signondt');
+		$crew->nmvsl = $this->input->post('nmvsl');
 		
-		// Gabungkan data - gunakan array() bukan []
+		
 		$data = array(
 			'crew' => $crew,
 			'checkboxes' => $checkbox_data,
-			'all_data' => $_GET // untuk debugging
+			'all_data' => $_POST
 		);
-		
-		// Debug - HAPUS setelah testing
-		// echo '<pre>';
-		// print_r($data);
-		// echo '</pre>';
-		// exit;
-		
-		// Lanjutkan generate PDF...
+
 		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 		$mpdf = new mPDF('utf-8', 'A4');
 		
-		ob_start();
-		$this->load->view('frontend/form_mlc_pdf', $data);
-		$html = ob_get_clean();
-		
+		$html = $this->load->view('frontend/form_mlc_pdf', $data, TRUE);
 		$mpdf->WriteHTML($html);
-		$filename = "MLC_Form_" . $crew->fullname . "_" . date('Ymd') . ".pdf";
+		
+		$filename = "MLC_Form_" . $crew->fullname . ".pdf";
+		$mpdf->Output($filename, 'I');
+		exit;
+	}
+
+
+	function get_data_form_defbreafing()
+	{
+		$idperson = $this->input->post("idperson", true);
+
+		$sql = "
+			SELECT 
+				D.nmvsl AS nama_kapal,
+				B.signonport AS pelabuhan,
+				C.nmrank AS jabatan,
+				CONCAT_WS(' ', A.fname, A.mname, A.lname) AS nama_crew,
+				A.telpno AS no_telp,
+				B.signondt,
+				B.estsignoffdt
+			FROM mstpersonal A
+			LEFT JOIN tblcontract B ON A.idperson = B.idperson
+			LEFT JOIN mstrank C ON B.signonrank = C.kdrank
+			LEFT JOIN mstvessel D ON B.signonvsl = D.kdvsl
+			WHERE 1=1
+				AND B.idperson = '$idperson'
+			ORDER BY B.signondt DESC
+			LIMIT 1
+		";
+
+		$data = $this->MCrewscv->getDataQuery($sql);
+
+		$result = array();
+
+		if (!empty($data)) {
+			foreach ($data as $row) {
+				$result[] = array(
+					'nama_kapal'  => isset($row->nama_kapal) ? $row->nama_kapal : '',
+					'pelabuhan'   => isset($row->pelabuhan) ? $row->pelabuhan : '',
+					'jabatan'     => isset($row->jabatan) ? $row->jabatan : '',
+					'nama_crew'   => isset($row->nama_crew) ? $row->nama_crew : '',
+					'no_telp'     => isset($row->no_telp) ? $row->no_telp : '',
+					'tgl_join'    => (!empty($row->signondt) && $row->signondt != '0000-00-00')
+										? date("d M Y", strtotime($row->signondt))
+										: '',
+					'tgl_signoff' => (!empty($row->estsignoffdt) && $row->estsignoffdt != '0000-00-00')
+										? date("d M Y", strtotime($row->estsignoffdt))
+										: ''
+				);
+			}
+		}
+
+		echo json_encode(array(
+			'success' => !empty($result),
+			'data'    => $result
+		));
+	}
+
+	public function generatePDF_Breafing()
+	{
+	
+		$crew = new stdClass();
+		$crew->idperson    = $this->input->post('idperson', true);
+		$crew->nama_crew   = $this->input->post('nama_crew', true);
+		$crew->jabatan     = $this->input->post('jabatan', true);
+		$crew->vessel      = $this->input->post('vessel', true);
+		$crew->pelabuhan   = $this->input->post('pelabuhan', true);
+		$crew->no_telp     = $this->input->post('no_telp', true);
+		$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
+		$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
+		$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
+		$crew->certificates     = $this->input->post('certificates', true);
+
+		$data = array(
+			'crew' => $crew
+		);
+
+
+		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
+
+		$mpdf = new mPDF('utf-8', 'A4');
+		$mpdf->SetTitle('Form Debriefing');
+
+		$html = $this->load->view('frontend/form_defbreafing_pdf', $data, TRUE);
+		$mpdf->WriteHTML($html);
+
+		$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
+
 		$mpdf->Output($filename, 'I');
 		exit;
 	}
@@ -6472,6 +6481,5 @@ class Report extends CI_Controller {
 
 
 
-	
 
 }

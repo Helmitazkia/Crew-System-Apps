@@ -72,19 +72,19 @@
         margin-bottom: 14px;
     }
 
-    /* === GLOBAL FONT SIZE FOR PDF === */
+ 
     body {
         font-family: "Times New Roman", serif;
         font-size: 11px;
-        /* dari default 13px */
+       
     }
 
-    /* HEADER */
+
     .long-line {
         border-bottom: 0.8px solid #000;
     }
 
-    /* STATEMENT TABLE */
+    
     .statement-table {
         font-size: 11px;
     }
@@ -92,33 +92,29 @@
     .statement-table th,
     .statement-table td {
         padding: 4px;
-        /* dari 6px */
+
     }
 
-    /* SUBTEXT */
     .subtext {
         font-size: 10px;
         margin-top: 2px;
     }
 
-    /* YES / NO CHECK BOX */
     .check-box {
         width: 14px;
         height: 14px;
         border: 1.2px solid #000;
     }
 
-    /* REMARKS */
     .remarks-title {
         font-size: 11px;
     }
 
     .remarks-box {
         height: 55px;
-        /* dari 70px */
     }
 
-    /* LIST TEXT */
+
     ul {
         font-size: 11px;
     }
@@ -126,9 +122,7 @@
     .sign-grid {
         width: 100%;
         border-collapse: separate;
-        /* PENTING */
         border-spacing: 15px 12px;
-        /* jarak antar box */
         font-size: 11px;
     }
 
@@ -211,9 +205,6 @@
                                 perjanjian ini.
                             </div>
                         </td>
-                        <!-- Di dalam table -->
-                        <!-- HTML entities yang lebih support -->
-
                         <td class="col-yes"
                             style="text-align: center; padding-top: 10px; padding-bottom: 10px;font-family: 'DejaVu Sans'; font-size: 16px;">
                             <?php echo ($all_data['statement_2'] == 1) ? '✓' : ''; ?>
@@ -395,24 +386,24 @@
 
                 <div class="sign-container">
                     <div class="sign-table-wrapper">
-                        <table style="border-collapse:separate; border-spacing:15px 0;">
+                        <table style="border-collapse:separate; border-spacing:15px 0;margin-left:5px;">
                             <tr>
                                 <td style="
                                         border:1px solid #000;
-                                        width: 10%;
-                                        height:200px;
+                                        width: 300px;
+                                        height:100px;
                                         vertical-align:bottom;
                                         text-align:center;
                                         padding-bottom:8px;
+                                      
                                     ">
                                     <div style="font-weight:bold;">Seafarer's Name</div>
                                     <div style="font-size:12px;"> <?php echo $crew->fullname ?></div>
                                 </td>
-
-                                <td style="
+                                 <td style="
                                         border:1px solid #000;
-                                        width:10%;
-                                        height:70px;
+                                        width: 300px;
+                                        height:90px;
                                         vertical-align:bottom;
                                         text-align:center;
                                         padding-bottom:8px;
@@ -420,16 +411,16 @@
                                     <div style="font-weight:bold;">Rank</div>
                                     <div style="font-size:12px;"><?php echo $crew->nmrank ?></div>
                                 </td>
-                                <td style="
+                                   <td style="
                                         border:1px solid #000;
-                                        width:10%;
-                                        height:70px;
+                                        width: 300px;
+                                        height:90px;
                                         vertical-align:bottom;
                                         text-align:center;
                                         padding-bottom:8px;
                                     ">
                                     <div style="font-weight:bold;">Date</div>
-                                    <div style="font-size:12px;"><?php echo $crew->signondt ?></div>
+                                    <div style="font-size:12px;"> <?php echo $crew->signondt ?></div>
                                 </td>
                             </tr>
                         </table>
@@ -438,30 +429,32 @@
                 <br>
                 <div class="sign-container">
                     <div class="sign-table-wrapper">
-                        <table style="border-collapse:separate; border-spacing:15px 0;">
+                        <table style="border-collapse:separate; border-spacing:15px 0;margin-left:1px;">
                             <tr>
                                 <td style="
                                         border:1px solid #000;
-                                        width: 144px;
-                                        height:120px;
+                                        width: 232px;
+                                        height:70px;
                                         vertical-align:bottom;
                                         text-align:center;
                                         padding-bottom:8px;
+                                        margin-right: 400px;
                                     ">
-                                    <div style="font-weight:bold;font-size:13px;">Eva Marliana</div>
-                                    <div style="font-size:12px;">Crew Manager</div>
+                                    <div style="font-weight:bold;font-size:9px;">Eva Marliana</div>
+                                    <div style="font-size:9px;">Crew Manager</div>
                                 </td>
 
                                 <td style="
                                         border:1px solid #000;
-                                        width:10%;
-                                        height:120px;
+                                        width: 232px;
+                                        height:70px;
                                         vertical-align:bottom;
                                         text-align:center;
                                         padding-bottom:8px;
+                                        margin-right: 400px;
                                     ">
-                                    <div style="font-weight:bold;font-size:13px;">Vessel to Join</div>
-                                    <div style="font-size:12px;"><?php echo $crew->nmvsl ?></div>
+                                    <div style="font-weight:bold;font-size:9px;">Vessel to Join</div>
+                                    <div style="font-size:9px;"> <?php echo $crew->nmvsl ?></div>
                                 </td>
                             </tr>
                         </table>
