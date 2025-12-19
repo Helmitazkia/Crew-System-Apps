@@ -4028,17 +4028,10 @@
                     $("#val-jabatan-defbreafing").text(res.data[0].jabatan);
                     $("#val-telp-defbreafing").text(res.data[0].no_telp);
                     $("#val-namecrew-defbreafing").text(res.data[0].nama_crew);
-                    $("#val-tgljoin-defbreafing").text(res.data[0].tgl_join);
-                    $("#val-tglsignoff-defbreafing").text(res.data[0].tgl_signoff);
-                    $("#val-siapjoin-defbreafing").text(res.data[0].tgl_join);
-                    
-
-                    // $("#txtJabatan").text(res.data.jabatan);
-                    // $("#txtNamaCrew").text(res.data.nama_crew);
-                    // $("#txtNoTelp").text(res.data.no_telp);
-                    // $("#txtTglJoin").text(res.data.tgl_join);
-                    // $("#txtTglSignOff").text(res.data.tgl_signoff);
-                
+                    $("#val-tgljoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));
+                    $("#val-tglsignoff-defbreafing").val(formatDateToInput(res.data[0].tgl_signoff));
+                    $("#val-siapjoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));  
+                   
                 },
                 error: function(xhr, status, error) {
                     console.log("AJAX Error:", xhr.responseText);
@@ -4046,6 +4039,20 @@
                 }
             });
         }
+
+        function formatDateToInput(dateStr) {
+            if (!dateStr) return '';
+
+                const d = new Date(dateStr);
+                if (isNaN(d)) return '';
+
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day   = String(d.getDate()).padStart(2, '0');
+                const year  = d.getFullYear();
+
+            return `${year}-${month}-${day}`;
+        }
+
 
         function generateBreafingPDF() {
 
@@ -4064,9 +4071,10 @@
                 jabatan    : $("#val-jabatan-defbreafing").text(),
                 no_telp    : $("#val-telp-defbreafing").text(),
                 nama_crew  : $("#val-namecrew-defbreafing").text(),
-                tgl_join   : $("#val-tgljoin-defbreafing").text(),
-                tgl_signoff: $("#val-tglsignoff-defbreafing").text(),
-                siap_join  : $("#val-siapjoin-defbreafing").text()
+                tgl_join   : $("#val-tgljoin-defbreafing").val(),
+                tgl_signoff: $("#val-tglsignoff-defbreafing").val(),
+                siap_join  : $("#val-siapjoin-defbreafing").val(),
+                certificates: $("#certificates-input-document").val()
             };
 
             console.log("Data dikirim ke server:", data);
@@ -4217,6 +4225,151 @@
 }
 </style>
 
+<style>
+    .debriefing-body {
+        font-family: "Times New Roman", serif;
+        font-size: 13px;
+        padding: 25px;
+    }
+
+    .debriefing-container {
+        width: 100%;
+        border: 1px solid #000;
+        padding: 15px;
+        background-color: white;
+    }
+
+    .debriefing-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .info-table td {
+        padding: 6px 4px;
+        vertical-align: top;
+    }
+
+    .label {
+        width: 200px;
+    }
+
+    .line {
+        border-bottom: 1px solid #000;
+        height: 18px;
+    }
+
+    .section-title {
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    .question-table th,
+    .question-table td {
+        border: 1px solid #000;
+        padding: 8px;
+        vertical-align: top;
+    }
+
+    .question-table th {
+        text-align: center;
+    }
+
+    .answer-box {
+        height: 60px;
+        background-color: #f8f9fa;
+    }
+
+    .remarks-box {
+        width: 100%;
+        height: 70px;
+        border: 1px solid #000;
+        margin-bottom: 14px;
+        background-color: #f8f9fa;
+    }
+
+    .signature-table td {
+        height: 90px;
+        vertical-align: bottom;
+        text-align: center;
+        width: 33.33%;
+        border-top: 1px solid #000;
+        padding-top: 10px;
+    }
+
+    .footer {
+        margin-top: 20px;
+        font-size: 11px;
+    }
+
+    /* Modal khusus untuk form debriefing */
+    .debriefing-modal .modal-dialog {
+        max-width: 90%;
+        width: 1000px;
+    }
+
+    .debriefing-modal .modal-content {
+        min-height: 90vh;
+    }
+
+    .debriefing-modal .modal-body {
+        padding: 0;
+    }
+
+    @media print {
+
+        .modal-header,
+        .modal-footer {
+            display: none !important;
+        }
+
+        .modal-dialog {
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+
+        .modal-content {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .modal-body {
+            padding: 0 !important;
+        }
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-center {
+        text-align: center;
+        flex-grow: 1;
+    }
+
+    .header-right {
+        text-align: right;
+    }
+
+    .company-logo {
+        width: 80px;
+        height: auto;
+    }
+
+    .cert-logos {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-end;
+        margin-top: 5px;
+    }
+
+    .cert-logos img {
+        width: 60px;
+        height: auto;
+    }
+</style>
+
 <body>
 
     <div class="container-fluid" style="background-color:#D4D4D4;min-height:500px;">
@@ -4297,7 +4450,7 @@
                                 <div class="col-md-3">
                                     <button class="btn btn-primary btn-sm btn-block" title="Cetak"
                                         onclick="printDataPrincipal();" id="btnPrintPrincipal">
-                                        <i class="fa fa-print"></i> PRINT
+                                        <i class="fa fa-print"></i> Print CV
                                     </button>
                                 </div>
                                 <div class="col-md-3">
@@ -6689,7 +6842,7 @@
             </div>
             <div class="modal-footer">
                 <input type="hidden" id="txtIdPerson" value="">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrint">Print</button>
             </div>
         </div>
@@ -6912,7 +7065,7 @@
             </div>
 
             <div class="modal-footer" style="border-top:1px solid #ccc;padding:10px 20px;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrintWages">Print</button>
             </div>
         </div>
@@ -7070,7 +7223,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveSPJ">Save & Print</button>
             </div>
 
@@ -7217,7 +7370,7 @@
             </div>
 
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrintStatement">Print</button>
             </div>
 
@@ -7425,7 +7578,7 @@
             </div>
 
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <input type="hidden" id="hid_entitas">
                 <input type="hidden" id="hid_vessel">
                 <input type="hidden" id="hid_port">
@@ -7776,7 +7929,7 @@
             </div>
             <hr>
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnSaveAndPrintStatementCrew">Print</button>
             </div>
 
@@ -8186,7 +8339,7 @@
                 </table>
             </div>
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="btnPrintPrevention">Print</button>
             </div>
         </div>
@@ -8540,7 +8693,7 @@
                 </tr>
             </table>
             <div class="modal-footer" style="border-top:none; justify-content:center;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                 <button type="button" class="btn btn-primary" id="printCrewStatement">Print</button>
             </div>
         </div>
@@ -9435,7 +9588,7 @@
                 </div>
                 <div class="modal-footer">
                     <input type="hidden" id="txtIdPerson" value="">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                     <button type="button" class="btn btn-primary" id="btn-print-form-mlc"
                         onclick="click_print_sdfsdf()">Print</button>
                 </div>
@@ -9478,7 +9631,7 @@
                         </table>
 
                             <table class="data-utama-table"
-                                style="width:100%; border-collapse:collapse; margin-top:15px;">
+                                style="width:100%; border-collapse:collapse; margin-top:15px;" border="0">
                                 <tr>
                                     <td style="width:25%; font-weight:bold;">Nama Kapal</td>
                                     <td style="width:25%;">:<smal id="val-vessel-defbreafing" style="padding:7px;"></smal></td>
@@ -9500,21 +9653,21 @@
 
                                 <tr>
                                     <td style="font-weight:bold;">Tgl. Join</td>
-                                    <td>:<smal id="val-tgljoin-defbreafing" style="padding:7px;"></smal></td>
+                                    <td>:<input type="date" id="val-tgljoin-defbreafing" style="margin-top: 10px;margin-left:4px;width: 95%;" ></input></td>
                                     <td></td>
                                     <td></td>
                                 </tr>
 
                                 <tr>
                                     <td style="font-weight:bold;">Tgl. Sign Off</td>
-                                    <td>:<smal id="val-tglsignoff-defbreafing" style="padding:7px;"></smal></td>
+                                    <td>:<input type="date" id="val-tglsignoff-defbreafing" style="margin-top: 10px;margin-left:4px;width: 95%;"></input></td>
                                     <td></td>
                                     <td></td>
                                 </tr>
 
                                 <tr>
                                     <td style="font-weight:bold;">Kesiapan Join</td>
-                                    <td>:<smal id="val-siapjoin-defbreafing" style="padding:7px;"></smal></td>
+                                    <td>:<input  type="date" id="val-siapjoin-defbreafing" style="margin-top: 10px;margin-left:4px; width: 95%;"></input></td>
                                     <td></td>
                                     <td></td>
                                 </tr>
@@ -9525,7 +9678,7 @@
                             <div class="section-title">
                                 Certificates and documents yang harus diperbaharui atau dilengkapi :
                             </div>
-                            <div class="remarks-box"></div>
+                            <div class="remarks-box"><textarea  type="text" id="certificates-input-document" style="width: 100%;height: 70px;"></textarea></div>
 
                             <!-- PERTANYAAN -->
                             <table class="question-table" style="margin-top:15px;">
@@ -9623,7 +9776,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
                         <button type="button" class="btn btn-primary" id="btn-form-bereafing">
                             <i class="bi bi-printer"></i> Print
                         </button>
@@ -9633,151 +9786,4 @@
             </div>
         </div>
     </div>
-
-    
-    <style>
-        .debriefing-body {
-            font-family: "Times New Roman", serif;
-            font-size: 13px;
-            padding: 25px;
-        }
-
-        .debriefing-container {
-            width: 100%;
-            border: 1px solid #000;
-            padding: 15px;
-            background-color: white;
-        }
-
-        .debriefing-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .info-table td {
-            padding: 6px 4px;
-            vertical-align: top;
-        }
-
-        .label {
-            width: 200px;
-        }
-
-        .line {
-            border-bottom: 1px solid #000;
-            height: 18px;
-        }
-
-        .section-title {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-
-        .question-table th,
-        .question-table td {
-            border: 1px solid #000;
-            padding: 8px;
-            vertical-align: top;
-        }
-
-        .question-table th {
-            text-align: center;
-        }
-
-        .answer-box {
-            height: 60px;
-            background-color: #f8f9fa;
-        }
-
-        .remarks-box {
-            width: 100%;
-            height: 70px;
-            border: 1px solid #000;
-            margin-bottom: 14px;
-            background-color: #f8f9fa;
-        }
-
-        .signature-table td {
-            height: 90px;
-            vertical-align: bottom;
-            text-align: center;
-            width: 33.33%;
-            border-top: 1px solid #000;
-            padding-top: 10px;
-        }
-
-        .footer {
-            margin-top: 20px;
-            font-size: 11px;
-        }
-
-        /* Modal khusus untuk form debriefing */
-        .debriefing-modal .modal-dialog {
-            max-width: 90%;
-            width: 1000px;
-        }
-
-        .debriefing-modal .modal-content {
-            min-height: 90vh;
-        }
-
-        .debriefing-modal .modal-body {
-            padding: 0;
-        }
-
-        @media print {
-
-            .modal-header,
-            .modal-footer {
-                display: none !important;
-            }
-
-            .modal-dialog {
-                max-width: 100% !important;
-                margin: 0 !important;
-            }
-
-            .modal-content {
-                border: none !important;
-                box-shadow: none !important;
-            }
-
-            .modal-body {
-                padding: 0 !important;
-            }
-        }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header-center {
-            text-align: center;
-            flex-grow: 1;
-        }
-
-        .header-right {
-            text-align: right;
-        }
-
-        .company-logo {
-            width: 80px;
-            height: auto;
-        }
-
-        .cert-logos {
-            display: flex;
-            gap: 3px;
-            justify-content: flex-end;
-            margin-top: 5px;
-        }
-
-        .cert-logos img {
-            width: 60px;
-            height: auto;
-        }
-    </style>
-
 </html>

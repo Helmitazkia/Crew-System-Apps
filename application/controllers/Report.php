@@ -6454,10 +6454,10 @@ class Report extends CI_Controller {
 		$crew->vessel      = $this->input->post('vessel', true);
 		$crew->pelabuhan   = $this->input->post('pelabuhan', true);
 		$crew->no_telp     = $this->input->post('no_telp', true);
-		$crew->tgl_join    = $this->input->post('tgl_join', true);
-		$crew->tgl_signoff = $this->input->post('tgl_signoff', true);
-		$crew->siap_join   = $this->input->post('siap_join', true);
-
+		$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
+		$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
+		$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
+		$crew->certificates     = $this->input->post('certificates', true);
 
 		$data = array(
 			'crew' => $crew
