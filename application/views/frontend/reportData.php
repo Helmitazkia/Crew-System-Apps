@@ -9973,7 +9973,7 @@
                 3. Medical Check Up Panama + ECG + Renal Function + Liver Function + Glukosa at Random</strong>
               </td>
             </tr>
-            <tr><td><input type="checkbox" id="mcu4"> 4. Dental & Gum</td></tr>
+            <tr><td><input type="checkbox" id="mcu4"> 4. Pemeriksaan Gigi & Gusi (Dental+Gum)</td></tr>
             <tr>
               <td>
                 <input type="checkbox" id="mcu5">
@@ -10035,8 +10035,8 @@
 
           <div class="mt-5" style="width:40%;">
             <p>Hormat Kami,</p><br><br>
-            <p class="fw-bold mb-0">Eva Marliana</p>
-            Head Of Crewing Division
+            <p class="fw-bold mb-0">Hadjid</p>
+            Ass.Crew Manager
           </div>
 
         </div>
