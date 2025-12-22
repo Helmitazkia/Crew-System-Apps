@@ -143,7 +143,6 @@
                 },
                 success: function(res) {
                     $("#btnSaveAndPrint").prop("disabled", false).text("Save & Print PKL");
-
                     if (res.success) {
                         alert("✅ " + res.message);
 
@@ -4124,9 +4123,112 @@
             }, 1000);
         }
 
-    
+        /*start form mcu*/
+        function click_form_mcu() {
+            var get_idperson = $("#txtIdPerson").val();
+
+            if (!get_idperson) {
+                alert("Person Empty!");
+                return;
+            }
+            $("#modal-form-mcu").modal("show");
+            $.ajax({
+                url: "<?php echo base_url('report/get_data_form_defbreafing'); ?>",
+                type: "POST",
+                data: {
+                    idperson: get_idperson
+                },
+                dataType: "json",
+                success: function(res) {
+                    // console.log(res);
+                    if (!res.success || !res.data) {
+                        alert("Data tidak ditemukan!");
+                        return;
+                    }
+                    $("#name-crew-mcu").text(res.data[0].nama_crew);
+                    $("#jabatan-mcu").text(res.data[0].jabatan);
+                    $("#vessel-name-mcu").text(res.data[0].nama_kapal);
+                },
+                error: function(xhr, status, error) {
+                    console.log("AJAX Error:", xhr.responseText);
+                    alert("Error fetching data.");
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $('#btn-form-mcu').on('click', function () {
+                console.clear();
+                generate_form_MCUPDF();
+            });
+        });
+
+       
+        function generate_form_MCUPDF() {
+
+            var idperson = $("#txtIdPerson").val();
+            if (!idperson) {
+                alert("ID Person kosong!");
+                return;
+            }
+
+            const data = {
+                idperson: idperson,
+                name_crew: $("#name-crew-mcu").text().trim(),
+                jabatan: $("#jabatan-mcu").text().trim(),
+                vessel_name: $("#vessel-name-mcu").text().trim(),
+                mcu: []
+            };
+
+            for (let i = 1; i <= 10; i++) {
+                data.mcu.push($("#mcu" + i).is(":checked") ? 1 : 0);
+            }
+            // console.log(data);
+            submitPostDataMCUFORM(data);
+        }
+
+        function submitPostDataMCUFORM(data) {
+            const form = document.createElement('form');
+            form.id = 'tempnameMCUForm';
+            form.method = 'POST';
+            form.action = '<?php echo base_url("report/generatePDF_MCU"); ?>';
+            form.target = '_blank';
+            form.style.display = 'none';
+
+            // Tambahkan data
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key];
+                form.appendChild(input);
+            });
 
 
+            const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
+            const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
+
+            if (csrfName && csrfHash) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = csrfName;
+                csrfInput.value = csrfHash;
+                form.appendChild(csrfInput);
+            }
+
+      
+            document.body.appendChild(form);
+            form.submit();
+
+            // Cleanup setelah 1 detik
+            setTimeout(() => {
+                if (document.getElementById('tempnameMCUForm')) {
+                    document.body.removeChild(form);
+                }
+            }, 1000);
+        }
+
+         /*Print Form MCU End */
 
     </script>
 </head>
@@ -4480,7 +4582,7 @@
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakPKLCrew();" id="btnPKLCrew">
-                                        <i class="fa fa-print"></i> Print PKL
+                                        <i class="fa fa-print"></i> PKL
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
@@ -4492,25 +4594,25 @@
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakSPJCrew();" id="btnSPJCrew">
-                                        <i class="fa fa-print"></i> Print Official Travel Letter
+                                        <i class="fa fa-print"></i> Official Travel Letter
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakDataBankCrew();" id="btnStatementCrew">
-                                        <i class="fa fa-print"></i> Print Data Bank Crew
+                                        <i class="fa fa-print"></i> Data Bank Crew
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="cetakIntroduction();" id="btnIntroductionCrew">
-                                        <i class="fa fa-print"></i> Print Instroduction Letter
+                                        <i class="fa fa-print"></i> Introduction Letter
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="cetakStatement();" id="btnIntroductionCrew">
-                                        <i class="fa fa-print"></i> Print Statement of Employment
+                                        onclick="cetakStatement();" id="btnIntroductionCrew"  style="white-space: normal; word-wrap: break-word; text-align:center;">
+                                        <i class="fa fa-print"></i> Statement of Employment
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
@@ -4521,20 +4623,20 @@
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="cetakCovid19();" id="btnIntroductionCrew">
+                                        onclick="cetakCovid19();" id="btnIntroductionCrew" style="white-space: normal; word-wrap: break-word; text-align:center;">
                                         <i class="fa fa-print"></i> Print Covid-19 Prevention
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
-                                    <button class="btn btn-info btn-sm btn-block" title="Cetak" onclick="cetakLetter();"
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak" onclick="cetakLetter();" style="white-space: normal; word-wrap: break-word; text-align:center;"
                                         id="btnIntroductionCrew">
-                                        <i class="fa fa-print"></i> Print Letter Statement
+                                        <i class="fa fa-print"></i> Letter Statement
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="cetakSeafarerContract();" id="btnIntroductionCrew">
-                                        <i class="fa fa-print"></i> Print Seafarer Contract Suntechno
+                                        onclick="cetakSeafarerContract();" id="btnIntroductionCrew" style="white-space: normal; word-wrap: break-word; text-align:center;">
+                                        <i class="fa fa-print"></i> Seafarer Employment Agreement 
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
@@ -4546,13 +4648,19 @@
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="click_form_mlc();">
-                                        <i class="fa fa-print"></i> Print Form MLC
+                                        <i class="fa fa-print"></i> MLC Declaration Form 
                                     </button>
                                 </div>
                                  <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
                                         onclick="click_form_defbreafing();">
-                                        <i class="fa fa-print"></i> Print Form Debriefing
+                                        <i class="fa fa-print"></i> Debriefing
+                                    </button>
+                                </div>
+                                <div class="col-md-3" style="margin-top: 10px;">
+                                    <button class="btn btn-info btn-sm btn-block" title="Cetak"
+                                        onclick="click_form_mcu();">
+                                        <i class="fa fa-print"></i> MCU
                                     </button>
                                 </div>
                             </div>
@@ -9786,4 +9894,167 @@
             </div>
         </div>
     </div>
+
+ <div class="modal fade" id="modal-form-mcu" tabindex="-1">
+  <div class="modal-dialog modal-xl"  role="document">>
+    <div class="modal-content" style="width: 650px;margin-left: -50px;">
+      <!-- MODAL BODY -->
+      <div class="modal-body" id="content-mcu">
+        <table width="100%" cellpadding="5" cellspacing="0"
+            style="font-family:'Times New Roman';">
+            <tr>
+                <!-- KIRI : LOGO -->
+                <td width="7%" align="left" valign="middle">
+                    <img src="./assets/img/Logo_Andhika_2017.jpg"
+                        style="height:50px;">
+                </td>
+
+                <!-- TENGAH : JUDUL -->
+                <td width="50%" align="left" valign="middle">
+                    <div style="font-size:17px; font-weight:bold;">
+                        PT. ANDHINI EKA KARYA SEJAHTERA
+                    </div>
+                </td>
+
+                <!-- KANAN : LISENSI + LOGO -->
+                <td width="25%" align="right" valign="middle">
+                    <div style="font-size:11px; font-weight:bold;">
+                        SRPS LICENSE NO:
+                    </div>
+                    <div style="font-size:10px;">
+                        SIUPPAK 12.12 Tahun 2014
+                    </div>
+                    <div>
+                        <img src="./assets/img/Bureau_Veritas_Logo.jpg"
+                            style="height:30px;">
+                        <img src="./assets/img/Iso.jpg"
+                            style="height:30px;">
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <br>
+
+        
+
+        <!-- ===== ISI SURAT ===== -->
+        <div style="font-family:'Times New Roman'; font-size:12px;">
+          <table class="table table-borderless table-sm">
+            <tr>
+              <td>
+                Kepada Yth:<br>
+                INDOSEHAT 2003 MEDICAL CENTRE<br>
+                Jl. Cilincing Raya No. 74<br>
+                Tanjung Priok - Jakarta Utara<br>
+                Telp: (021) 4411281<br>
+                Fax: (021) 44830763
+              </td>
+              <td class="text-end" style="padding-left:220px;">
+                Jakarta, <?php echo date("d M Y", strtotime(date('Y-m-d'))); ?>
+              </td>
+            </tr>
+          </table>
+
+          <p class="text-center fw-bold" style="font-weight:bold;font-size:15px;">
+            TOP TOP URGENT<br>_______________________________
+          </p>
+
+          <p>
+            Dengan hormat,<br>
+            Bersama ini kami mohon agar dapat dilakukan pemeriksaan:
+          </p>
+
+          <table class="table table-bordered table-sm w-75">
+            <tr><td><input type="checkbox" id="mcu1"> 1. Medical Check Up Standard Perla</td></tr>
+            <tr><td><input type="checkbox" id="mcu2"> 2. Medical Check Up Kerajaan Malaysia</td></tr>
+            <tr>
+              <td>
+                <input type="checkbox" id="mcu3"><strong>
+                3. Medical Check Up Panama + ECG + Renal Function + Liver Function + Glukosa at Random</strong>
+              </td>
+            </tr>
+            <tr><td><input type="checkbox" id="mcu4"> 4. Dental & Gum</td></tr>
+            <tr>
+              <td>
+                <input type="checkbox" id="mcu5">
+                <strong>5. Drug & Alcoholic Test 6 (six) items :</strong>
+
+                <table class="table table-borderless table-sm mt-2">
+                  <tr>
+                    <td class="fw-bold ps-4" style="width:55%;">
+                      Pemeriksaan no. 5, 6 dilakukan JIKA<br>
+                      SUDAH FIT dan biayanya dibebankan<br>
+                      kepada PT. Andhini Eka Karya Sejahtera
+                    </td>
+                    <td style="width:45%;">
+                      Cocain metabolic<br>
+                      Marijuana metabolic<br>
+                      Morphine / Opiates<br>
+                      Pencyclidine<br>
+                      Amphetamine<br>
+                      Alcohol metabolic
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr><td><input type="checkbox" id="mcu6"> 6. HIV Test</td></tr>
+            <tr><td><input type="checkbox" id="mcu7"> 7. Chemical Contamination Test</td></tr>
+            <tr><td><input type="checkbox" id="mcu8"> 8. Sleep Apnea Syndrome</td></tr>
+          </table>
+
+          <p class="mt-3">Pemeriksaan dilaksanakan untuk crew kami:</p>
+
+          <table class="table table-bordered table-sm">
+            <thead class="text-center">
+              <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Jabatan</th>
+                <th>Kapal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-center">1</td>
+                <td id="name-crew-mcu"></td>
+                <td id="jabatan-mcu"></td>
+                <td id="vessel-name-mcu"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>Harap biaya dalam proses tersebut dibebankan pada :</p>
+
+          <table class="table table-borderless table-sm">
+            <tr>
+              <td><input type="checkbox" id="mcu9"> <strong>PT. Andhini Eka Karya Sejahtera</strong></td>
+              <td><input type="checkbox" id="mcu10"> <strong>Crew yang bersangkutan</strong></td>
+            </tr>
+          </table>
+
+          <div class="mt-5" style="width:40%;">
+            <p>Hormat Kami,</p><br><br>
+            <p class="fw-bold mb-0">Eva Marliana</p>
+            Head Of Crewing Division
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+       <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
+            <button type="button" class="btn btn-primary" id="btn-form-mcu">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
 </html>

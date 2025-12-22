@@ -6478,8 +6478,40 @@ class Report extends CI_Controller {
 		exit;
 	}
 
+	public function generatePDF_MCU()
+	{
+		$crew = new stdClass();
+		$crew->idperson    = $this->input->post('idperson', true);
+		$crew->nama_crew   = $this->input->post('name_crew', true);
+		$crew->jabatan     = $this->input->post('jabatan', true);
+		$crew->vessel      = $this->input->post('vessel_name', true);
+		$mcu = $this->input->post('mcu');
+    if (is_string($mcu)) {
+        $mcu = explode(',', $mcu);
+    }
 
+    for ($i = 0; $i < 10; $i++) {
+        $prop = 'mcu' . ($i + 1);
+        $crew->$prop = $mcu[$i]; 
+    }
+		$data = array(
+			'crew' => $crew
+		);
 
+		// print_r($data); exit;
+		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 
+		$mpdf = new mPDF('utf-8', 'A4');
+		$mpdf->SetTitle('Form Debriefing');
+		$mpdf->SetFont('dejavusans');
 
+		$html = $this->load->view('frontend/form_mcu_pdf', $data, TRUE);
+		$mpdf->WriteHTML($html);
+
+		$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
+
+		$mpdf->Output($filename, 'I');
+		exit;
+
+	}
 }
