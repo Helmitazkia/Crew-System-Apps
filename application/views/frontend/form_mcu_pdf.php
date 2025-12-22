@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Medical Check Up (MCU)</title>
+  <style>
+    body {
+      font-family: "Times New Roman", serif;
+      font-size: 12px;
+      margin: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td,
+    th {
+      vertical-align: top;
+      padding: 4px;
+    }
+
+    .border td,
+    .border th {
+      border: 1px solid #000;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .mt {
+      margin-top: 15px;
+    }
+
+    /* Checkbox aman mPDF */
+    .box {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
+      /* KUNCI */
+      border: 1.2px solid #000;
+      text-align: center;
+      vertical-align: middle;
+      margin-right: 6px;
+      /* JANGAN LEBIH BESAR */
+    }
+
+
+    .signature {
+      margin-top: 40px;
+      width: 40%;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page">
+
+    <!-- HEADER -->
+    <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';">
+      <tr>
+        <!-- KIRI : LOGO -->
+        <td width="7%" align="left" valign="middle">
+          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:50px;">
+        </td>
+
+        <!-- TENGAH : JUDUL -->
+        <td width="50%" align="left" valign="middle">
+          <div style="font-size:17px; font-weight:bold;">
+            PT. ANDHINI EKA KARYA SEJAHTERA
+          </div>
+        </td>
+
+        <!-- KANAN : LISENSI + LOGO -->
+        <td width="25%" align="right" valign="middle">
+          <div style="font-size:11px; font-weight:bold;">
+            SRPS LICENSE NO:
+          </div>
+          <div style="font-size:10px;">
+            SIUPPAK 12.12 Tahun 2014
+          </div>
+          <div>
+            <img src="./assets/img/Bureau_Veritas_Logo.jpg" style="height:30px;">
+            <img src="./assets/img/Iso.jpg" style="height:30px;">
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- TUJUAN -->
+    <table class="mt">
+      <tr>
+        <td>
+          Kepada Yth:<br>
+          INDOSEHAT 2003 MEDICAL CENTRE<br>
+          Jl. Cilincing Raya No. 74<br>
+          Tanjung Priok - Jakarta Utara<br>
+          Telp: (021) 4411281<br>
+          Fax: (021) 44830763
+        </td>
+        <td class="right">
+          Jakarta, <?php echo date('d M Y'); ?>
+        </td>
+      </tr>
+    </table>
+
+    <p class="center"><strong>TOP URGENT<br>_______________________________</strong></p>
+
+    <p>Dengan hormat,<br>Bersama ini kami mohon agar dapat dilakukan pemeriksaan:</p>
+
+    <!-- MCU LIST -->
+    <table style="width:600px;">
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu1==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          1. Medical Check Up Standart Perla 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box" style="font-family: 'DejaVu Sans'; font-size: 16px;"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu2==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          2. Medical Check Up Kerajaan Malaysia  
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu3==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          <strong>3. Medical Check Up Panama + ECG + Renal Function + Lever Function + Glukosa at Random</strong>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu4==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          4. Pemeriksaan Gigi & Gusi (Dental+Gum)
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu5==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          <strong>5. Drug & Alcoholic Test 6 (six) items</strong>
+          <table class="table table-borderless table-sm mt-2">
+            <tr>
+              <td class="fw-bold ps-4" style="width:55%;padding-left:38px;">
+                Pemeriksaan no. 5,6,7,8 dilakukan JIKA<br>
+                SUDAH FIT dan biayanya dibebankan<br>
+                kepada PT. Andhini Eka Karya Sejahtera
+              </td>
+              <td style="width:45%;">
+                Cocain metabolic<br>
+                Marijuana metabolic<br>
+                Morphine / Opiates<br>
+                Pencyclidine<br>
+                Amphetamine<br>
+                Alcohol metabolic
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu6==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          6. HIV Test
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu7==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          7. Chemical Contamination Test
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu8==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          8. Sleep Apnea Syndrome
+        </td>
+      </tr>
+    </table>
+
+    <p class="mt">Pemeriksaan dilaksanakan untuk crew kami:</p>
+
+    <!-- CREW -->
+    <table class="border">
+      <tr class="center">
+        <th>No</th>
+        <th>Nama</th>
+        <th>Jabatan</th>
+        <th>Kapal</th>
+      </tr>
+      <tr>
+        <td class="center">1</td>
+        <td><?php echo $crew->nama_crew; ?></td>
+        <td><?php echo $crew->jabatan; ?></td>
+        <td><?php echo $crew->vessel; ?></td>
+      </tr>
+    </table>
+
+    <p class="mt">Harap biaya dibebankan pada:</p>
+
+    <table>
+      <tr>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu9==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          PT. Andhini Eka Karya Sejahtera
+
+        </td>
+        <td>
+          <span class="box"
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu10==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          Crew yang bersangkutan
+        </td>
+      </tr>
+    </table>
+
+    <div class="signature">
+      <p>Hormat Kami,</p><br><br>
+      <strong>Hadjid </strong><br>
+      Ass.Crew Manager
+    </div>
+
+  </div>
+
+</body>
+
+</html>
