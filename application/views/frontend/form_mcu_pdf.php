@@ -39,20 +39,16 @@
       margin-top: 15px;
     }
 
-    /* Checkbox aman mPDF */
     .box {
       display: inline-block;
       width: 16px;
       height: 16px;
       line-height: 16px;
-      /* KUNCI */
       border: 1.2px solid #000;
       text-align: center;
       vertical-align: middle;
       margin-right: 6px;
-      /* JANGAN LEBIH BESAR */
     }
-
 
     .signature {
       margin-top: 40px;
@@ -62,16 +58,23 @@
   </style>
 </head>
 
-<body>
+<body <?php if ($status_mcu == 2): ?> style="
+        background-image: url('<?= base_url('assets/img/rejected.jpg') ?>');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 200px 200px;
+        background-attachment: fixed;
+        opacity: 0.1;
+    " <?php endif; ?>>
 
   <div class="page">
 
     <!-- HEADER -->
-    <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';">
+    <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';" border="1">
       <tr>
         <!-- KIRI : LOGO -->
         <td width="6%" align="left" valign="middle">
-          <img src="base_urlassets/img/Logo_Andhika_2017.jpg" style="height:50px;">
+          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:50px;">
         </td>
 
         <!-- TENGAH : JUDUL -->
@@ -109,7 +112,7 @@
           Fax: (021) 44830763
         </td>
         <td class="right">
-           Jakarta, <?php echo date('d M Y', strtotime($date_mcu)); ?>
+          Jakarta, <?php echo date('d M Y', strtotime($date_mcu)); ?>
         </td>
       </tr>
     </table>
@@ -124,14 +127,14 @@
         <td>
           <span class="box"
             style="font-family: 'DejaVu Sans'; font-size: 16px;word-wrap: break-word;"><?php echo ($mcu->mcu1==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
-          1. Medical Check Up Standart Perla 
+          1. Medical Check Up Standart Perla
         </td>
       </tr>
       <tr>
         <td>
           <span class="box" style="font-family: 'DejaVu Sans'; font-size: 16px;"
             style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu2==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
-          2. Medical Check Up Kerajaan Malaysia  
+          2. Medical Check Up Kerajaan Malaysia
         </td>
       </tr>
       <tr>
@@ -234,7 +237,7 @@
         </td>
       </tr>
     </table>
-    
+
     <div class="signature">
       <p>Hormat Kami,</p>
       <?php if ($status_mcu == 1 || $status_mcu == 2): ?>

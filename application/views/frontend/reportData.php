@@ -4391,7 +4391,7 @@
                 signature_qr: signature_qr
             };
 
-            console.log("POST PDF MCU (ALL CREW):", postData);
+            // console.log("POST PDF MCU (ALL CREW):", postData);
 
             let form = $('<form>', {
                 action: "<?= base_url('report/generatePDF_MCU'); ?>",

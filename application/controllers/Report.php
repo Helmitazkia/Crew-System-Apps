@@ -6867,7 +6867,7 @@ class Report extends CI_Controller {
 			$idEnc = base64_encode(base64_encode(base64_encode($idReport)));
 			$link  = base_url("report/print_approve_mcu/$idEnc");
 
-			$cmEmail = "helmi.tazkia@andhika.com";
+			$cmEmail = "eva.marliana@andhika.com";
 			$this->sendEmailMCU($cmEmail, $header, $persons, $link);
 	}
 
@@ -7056,29 +7056,173 @@ class Report extends CI_Controller {
 		public function approve_mcu()
 		{
 				$hashId = $this->input->post('hash_id', true);
-
+				
 				if (empty($hashId)) {
 						show_error('Invalid MCU ID');
 				}
-
+				
 				$idReport = base64_decode(base64_decode(base64_decode($hashId)));
-
+				
 				if (!is_numeric($idReport)) {
 						show_error('Invalid MCU ID');
 				}
-
+				
+				// 1. GET DATA EMAIL KLINIK
+				$sqlKlinik = "
+						SELECT b.email 
+						FROM report_mcu AS a
+						INNER JOIN master_mcu AS b ON a.id_master_mcu = b.id
+						WHERE a.id = ?
+						LIMIT 1
+				";
+				$klinik = $this->db->query($sqlKlinik, array($idReport))->row();
+				
+				// 2. CREATE QR CODE
 				$qrImg = $this->createQRCodeMCU($idReport, 'approveCM');
+				
+				// 3. UPDATE STATUS
 				$update = array(
 						'upuserdate'   => date('Y-m-d H:i:s'),
 						'status_mcu' => 1,
 						'signature_qr' => $qrImg
 				);
-
+				
 				$this->db->where('id', $idReport);
 				$this->db->update('report_mcu', $update);
-
+				
+				// 4. KIRIM EMAIL KE KLINIK JIKA ADA EMAILNYA
+				if ($klinik && !empty($klinik->email)) {
+						$this->sendEmailToClinic($idReport, $klinik->email);
+				}
+				
 				redirect('report/print_approve_mcu/'.$hashId);
 		}
+
+
+	private function sendEmailToClinic($idReport, $clinicEmail)
+	{
+			require_once APPPATH . 'third_party/PHPMailer/PHPMailer/class.phpmailer.php';
+			require_once APPPATH . 'third_party/PHPMailer/PHPMailer/class.smtp.php';
+			
+			// GET DATA MCU
+			$sqlHeader = "
+					SELECT 
+							a.id AS id_report,
+							b.clinic_name,
+							a.date_mcu,
+							b.email
+					FROM report_mcu AS a
+					INNER JOIN master_mcu AS b ON a.id_master_mcu = b.id
+					WHERE a.deletes = '0'
+							AND a.id = ?
+					LIMIT 1
+			";
+			
+			$header = $this->db->query($sqlHeader, array($idReport))->row();
+			if (!$header) return;
+			
+			// GET CREW LIST
+			$sqlPerson = "
+					SELECT name_person, rank, vessel_name
+					FROM report_mcu_person
+					WHERE id_report_mcu = ?
+					ORDER BY id ASC
+			";
+			$persons = $this->db->query($sqlPerson, array($idReport))->result();
+			
+			$mail = new PHPMailer();
+			
+			try {
+					$mail->isSMTP();
+					$mail->Host       = 'smtp.zoho.com';
+					$mail->SMTPAuth   = true;
+					$mail->Username   = 'noreply@andhika.com';
+					$mail->Password   = 'PCWLzCWDQH8C';
+					$mail->SMTPSecure = 'tls';
+					$mail->Port       = 587;
+					
+					$mail->setFrom('noreply@andhika.com', 'Crewing System - PT. Andhini Eka Karya Sejahtera');
+					$mail->addAddress($clinicEmail);
+					
+					// Optional: CC ke Crew Manager juga
+					$mail->addCC('eva.marliana@andhika.com', 'Crew Manager');
+					
+					$mail->isHTML(true);
+					$mail->Subject = 'Approval Medical Check Up (MCU) - ' . $header->clinic_name;
+					
+					// BUAT LIST CREW
+					$crewHtml = '<table border="1" cellpadding="6" cellspacing="0" width="100%" style="border-collapse: collapse;">
+									<tr style="background-color: #f2f2f2;">
+											<th>No</th>
+											<th>Nama</th>
+											<th>Jabatan</th>
+											<th>Kapal</th>
+									</tr>';
+					
+					$no = 1;
+					foreach ($persons as $p) {
+							$crewHtml .= "
+									<tr>
+											<td align='center'>$no</td>
+											<td>{$p->name_person}</td>
+											<td>{$p->rank}</td>
+											<td>{$p->vessel_name}</td>
+									</tr>";
+							$no++;
+					}
+					$crewHtml .= '</table>';
+					
+					// BODY EMAIL UNTUK KLINIK
+					$mail->Body = "
+							<div style='font-family: Arial, sans-serif; line-height: 1.6;'>
+									<p>Kepada Yth,</p>
+									<p><strong>Manager/Koordinator {$header->clinic_name}</strong></p>
+									
+									<p>Dengan hormat,</p>
+									
+									<p>Berikut kami sampaikan bahwa <strong>Medical Check Up (MCU)</strong> untuk crew kami 
+									<strong>TELAH DISETUJUI</strong> dan dapat dilaksanakan sesuai jadwal:</p>
+									
+									<ul>
+											<li><strong>Klinik:</strong> {$header->clinic_name}</li>
+											<li><strong>Tanggal MCU:</strong> " . date('d M Y', strtotime($header->date_mcu)) . "</li>
+											<li><strong>Jumlah Crew:</strong> " . count($persons) . " orang</li>
+									</ul>
+									
+									<p><strong>Daftar Crew yang akan melakukan MCU:</strong></p>
+									$crewHtml
+									
+									<p>Mohon MCU dapat dilaksanakan sesuai prosedur. Biaya akan dibebankan kepada perusahaan 
+									sebagaimana kesepakatan sebelumnya.</p>
+									
+									<p>Untuk informasi lebih lanjut, dapat menghubungi:</p>
+									<ul>
+											<li><strong>Eva Marliana</strong> (Crew Manager)</li>
+											<li>Email: Eva.marliana@andhika.com</li>
+									</ul>
+									
+									<br>
+									<p>Hormat kami,</p>
+									<p><strong>PT. Andhini Eka Karya Sejahtera</strong><br>
+									Crew Management Department</p>
+									
+									<hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'>
+									<p style='font-size: 12px; color: #666;'>
+											<em>Email ini dikirim otomatis dari Crewing System.<br>
+											Mohon tidak membalas email ini.</em>
+									</p>
+							</div>
+					";
+					
+					if (!$mail->send()) {
+							log_message('error', 'MCU CLINIC EMAIL ERROR: ' . $mail->ErrorInfo);
+							// Tidak perlu stop proses, hanya log error saja
+					}
+					
+			} catch (Exception $e) {
+					log_message('error', 'MCU Clinic Email Error: ' . $mail->ErrorInfo);
+			}
+	}
 
 		public function reject_mcu(){
 			$hashId        = $this->input->post('hash_id', true);
@@ -7135,13 +7279,203 @@ class Report extends CI_Controller {
 						'level'    => 'H',
 						'size'     => 6,
 						'savename' => FCPATH . $config['imagedir'] . $imgName,
-						'logo'     => base_url('assets/img/andhika.png')
+						'logo'     => './assets/img/andhika.png'
 				);
 
 				$this->ciqrcode->generate($params);
 
 				return $imgName;
 		}
+
+
+// 		public function download_mcu_pdf($hashId = '')
+// {
+//     require_once APPPATH . 'views/frontend/pdf/mpdf60/mpdf.php';
+    
+//     if (empty($hashId)) {
+//         show_error('ID MCU tidak valid');
+//         return;
+//     }
+    
+//     $id_report = base64_decode(base64_decode(base64_decode($hashId)));
+    
+//     if (!is_numeric($id_report)) {
+//         show_error('ID MCU tidak valid');
+//         return;
+//     }
+    
+//     // AMBIL DATA (SAMA DENGAN print_approve_mcu)
+//     $sqlReport = "
+//         SELECT 
+//             a.id AS id_report,
+//             b.clinic_name,
+//             a.date_mcu,
+//             c.answer_1,
+//             c.answer_2,
+//             c.answer_3,
+//             c.answer_4,
+//             c.answer_5,
+//             c.answer_6,
+//             c.answer_7,
+//             c.answer_8,
+//             c.answer_9,
+//             c.answer_10,
+//             a.signature_qr,
+//             a.status_mcu
+//         FROM report_mcu AS a
+//         INNER JOIN master_mcu AS b 
+//             ON a.id_master_mcu = b.id
+//         INNER JOIN report_answer_mcu AS c
+//             ON a.id = c.id_report_mcu
+//         WHERE a.deletes = '0'
+//             AND a.id = ?
+//         LIMIT 1
+//     ";
+    
+//     $report = $this->db->query($sqlReport, array($id_report))->row();
+    
+//     if (!$report) {
+//         show_error('Data MCU tidak ditemukan');
+//         return;
+//     }
+    
+//     $sqlPerson = "
+//         SELECT 
+//             name_person,
+//             rank,
+//             vessel_name
+//         FROM report_mcu_person
+//         WHERE id_report_mcu = ?
+//         ORDER BY id ASC
+//     ";
+    
+//     $persons = $this->db->query($sqlPerson, array($id_report))->result();
+    
+//     $mcu = new stdClass();
+//     for ($i = 1; $i <= 10; $i++) {
+//         $prop = 'mcu' . $i;
+//         $ans  = 'answer_' . $i;
+//         $mcu->$prop = (int) $report->$ans;
+//     }
+    
+//     // TAMBAHKAN FLAG UNTUK PDF
+//     $data = array(
+//         'clinic_name' => $report->clinic_name,
+//         'date_mcu'    => $report->date_mcu,
+//         'mcu'         => $mcu,
+//         'persons'     => $persons,
+//         'id_report'   => $id_report,
+//         'hash_id'     => $hashId,
+//         'signature_qr'=> $report->signature_qr,
+//         'status_mcu'  => $report->status_mcu,
+//         'is_pdf'      => true // FLAG UNTUK DETECT DI VIEW
+//     );
+    
+//     // INISIALISASI mPDF
+//     $mpdf = new mPDF('utf-8', 'A4', 0, '', 10, 10, 10, 10, 5, 5);
+//     $mpdf->SetTitle('Medical Check Up (MCU) Form');
+//     $mpdf->SetAuthor('PT. Andhini Eka Karya Sejahtera');
+//     $mpdf->SetCreator('Crewing System');
+//     $mpdf->SetFont('dejavusans');
+    
+//     // LOAD VIEW FILE
+//     $html = $this->load->view('frontend/print_approve_mcu', $data, TRUE);
+    
+//     // TAMBAH CSS KHUSUS UNTUK PDF
+//     $pdfStyles = '
+//         <style>
+//             /* HIDE ELEMENTS YANG TIDAK PERLU DI PDF */
+//             .no-print, 
+//             .modal, 
+//             .modal-backdrop,
+//             script,
+//             .btn,
+//             .action-buttons,
+//             #btnRejectMCU,
+//             [onclick],
+//             [data-toggle] {
+//                 display: none !important;
+//             }
+            
+//             /* STYLING UTAMA */
+//             body { 
+//                 font-family: "Times New Roman", serif; 
+//                 font-size: 12px; 
+//                 margin: 0; 
+//             }
+            
+//             .card { 
+//                 max-width: 100% !important; 
+//                 margin: 0 !important; 
+//                 border: none !important; 
+//                 box-shadow: none !important; 
+//                 padding: 0 !important; 
+//             }
+            
+//             table { 
+//                 width: 100%; 
+//                 border-collapse: collapse; 
+//                 page-break-inside: avoid; 
+//             }
+            
+//             td, th { 
+//                 vertical-align: top; 
+//                 padding: 4px; 
+//             }
+            
+//             .border td, .border th { 
+//                 border: 1px solid #000; 
+//             }
+            
+//             .center { text-align: center; }
+//             .right { text-align: right; }
+//             .mt { margin-top: 15px; }
+            
+//             .box { 
+//                 display: inline-block; 
+//                 width: 16px; 
+//                 height: 16px; 
+//                 line-height: 16px; 
+//                 border: 1.2px solid #000; 
+//                 text-align: center; 
+//                 vertical-align: middle; 
+//                 margin-right: 6px; 
+//             }
+            
+//             .signature { 
+//                 margin-top: 40px; 
+//                 width: 40%; 
+//                 text-align: center; 
+//             }
+            
+//             /* WATERMARK UNTUK STATUS */
+//             .watermark {
+//                 position: fixed;
+//                 top: 50%;
+//                 left: 50%;
+//                 transform: translate(-50%, -50%) rotate(-45deg);
+//                 font-size: 80px;
+//                 font-weight: bold;
+//                 color: rgba(0,0,0,0.1);
+//                 z-index: -1;
+//                 pointer-events: none;
+//             }
+//         </style>
+//     ';
+    
+//     // GABUNG STYLE DAN HTML
+//     $fullHtml = $pdfStyles . $html;
+    
+//     // WRITE KE PDF
+//     $mpdf->WriteHTML($fullHtml);
+    
+//     // GENERATE FILENAME
+//     $filename = "MCU_Form_" . date('Ymd_His') . ".pdf";
+    
+//     // OUTPUT: 'I' untuk view di browser, 'D' untuk download
+//     $mpdf->Output($filename, 'I');
+//     exit;
+// }
 
 
 }
