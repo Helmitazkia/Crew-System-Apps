@@ -71,7 +71,7 @@
       <tr>
         <!-- KIRI : LOGO -->
         <td width="6%" align="left" valign="middle">
-          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:50px;">
+          <img src="base_urlassets/img/Logo_Andhika_2017.jpg" style="height:50px;">
         </td>
 
         <!-- TENGAH : JUDUL -->
@@ -175,21 +175,21 @@
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu6==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu6==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           6. HIV Test
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu7==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu7==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           7. Chemical Contamination Test
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu8==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu8==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           8. Sleep Apnea Syndrome
         </td>
       </tr>
@@ -223,22 +223,25 @@
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu9==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu9==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           PT. Andhini Eka Karya Sejahtera
 
         </td>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu10==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu10==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           Crew yang bersangkutan
         </td>
       </tr>
     </table>
-
+    
     <div class="signature">
-      <p>Hormat Kami,</p><br><br>
-      <strong>Hadjid </strong><br>
-      Ass.Crew Manager
+      <p>Hormat Kami,</p>
+      <?php if ($status_mcu == 1 || $status_mcu == 2): ?>
+      <img src="<?= base_url('assets/imgQRCodeCrewCV/'.$signature_qr); ?>" style="height:60px;"><br>
+      <?php endif; ?>
+      <strong>Eva Marliana</strong><br>
+      Crew Manager
     </div>
 
   </div>

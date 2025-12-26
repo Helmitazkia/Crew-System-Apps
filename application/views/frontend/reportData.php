@@ -4163,19 +4163,25 @@
                         $.each(res.data, function (i, row) {
 
                             let statusText = '';
-                            if (row.status_mcu == 0) statusText = '<span class="badge bg-warning">Proses</span>';
-                            else if (row.status_mcu == 1) statusText = '<span class="badge bg-success">Approve</span>';
-                            else if (row.status_mcu == 2) statusText = '<span class="badge bg-danger">Reject</span>';
+                            if (row.status_mcu == 0) {
+                                statusText = '<button type="button" class="btn btn-info" style="border-radius:13px;background-color:#17a2b8;font-">Process</button>';
+                            } else if (row.status_mcu == 1) {
+                                statusText = '<button type="button" class="btn btn-success" style="border-radius:13px;">Approve</button>';
+                            } else if (row.status_mcu == 2) {
+                                statusText = '<button type="button" class="btn btn-danger" style="border-radius:13px;">Rejected</button>';
+                            }
 
                             html += `
                                 <tr>
                                     <td class="text-center">${i + 1}</td>
-                                    <td>${row.clinic_name ?? '-'}</td>
-                                    <td>${row.date_mcu ?? '-'}</td>
+                                    <td>${row.clinic_name ?? ''}</td>
+                                    <td>${row.date_mcu ?? ''}</td>
                                     <td class="text-center">${statusText}</td>
-                                    <td>${row.remarks_reject ?? '-'}</td>
-                                    <td class="text-center">${row.upuserdate ?? '-'}</td>
-                                    <td class="text-center">${row.userid_update ?? '-'}</td>
+                                    <td style="max-width: 205px; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+                                        ${row.remarks_reject ?? ''}
+                                    </td>
+                                    <td>${row.upuserdate ?? ''}</td>
+                                    <td>${row.userid_update ?? ''}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-info btn-sm view-btn mr-1" 
                                                 data-id="${row.id_report_mcu}" 
@@ -4183,7 +4189,7 @@
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         <button type="button" class="btn btn-danger btn-sm delete-btn" 
-                                                data-id="${row.id}" 
+                                                data-id="${row.id_report_mcu}" 
                                                 data-toggle="tooltip" title="Delete" id="delete-list-mcu">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -4252,6 +4258,102 @@
             });
 
 
+            // $(document).on('click', '.delete-btn', function () {
+            //     var idReport = $(this).data('id');
+            //     // console.log("View MCU ID:", idReport);
+            //     if (!idReport) {
+            //         alert('ID Report tidak ditemukan');
+            //         return;
+            //     }
+
+            //     $.ajax({
+            //         url: "<?= base_url('report/delete_list_mcu'); ?>",
+            //         type: "POST",
+            //         dataType: "json",
+            //         data: {
+            //             id_report: idReport
+            //         },
+            //         success: function (res) {
+            //             if (!res.success) {
+            //                 alert(res.message);
+            //                 return;
+            //             }
+            //             alert('Data MCU berhasil dihapus');
+            //             loadReportMCU();
+                     
+            //         },
+            //         error: function (xhr) {
+            //             console.error(xhr.responseText);
+            //             alert('Gagal mengambil data MCU');
+            //         }
+            //     });
+            // });
+               $(document).on('click', '.delete-btn', function () {
+                    var idReport = $(this).data('id');
+                    
+                    if (!idReport) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'ID Report tidak ditemukan!'
+                        });
+                        return;
+                    }
+
+                    // SweetAlert Confirmation
+                    Swal.fire({
+                        title: "Are you sure?",
+                        text: "You won't be able to revert this!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#3085d6",
+                        cancelButtonColor: "#d33",
+                        confirmButtonText: "Yes, delete it!",
+                        preConfirm: () => {
+                            return new Promise((resolve, reject) => {
+                                $.ajax({
+                                    url: "<?= base_url('report/delete_list_mcu'); ?>",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: {
+                                        id_report: idReport
+                                    },
+                                    success: function (res) {
+                                        resolve(res);
+                                    },
+                                    error: function (xhr) {
+                                        console.error(xhr.responseText);
+                                        reject('Terjadi kesalahan pada server');
+                                    }
+                                });
+                            });
+                        },
+                        allowOutsideClick: () => !Swal.isLoading()
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            if (result.value.success) {
+                                // Langsung load data baru setelah delete sukses
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: result.value.message || 'Data berhasil dihapus!',
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: '#28a745'
+                                });
+                                loadReportMCU();
+                            } else {
+                                // Tampilkan error jika gagal
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal!',
+                                    text: result.value.message || 'Gagal menghapus data',
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: '#d33'
+                                });
+                            }
+                        }
+                    });
+                });
         });
 
 
@@ -4265,6 +4367,8 @@
             let persons = data.persons;
             let date_mcu = report.date_mcu;
             let clicnic_name = report.clinic_name;
+            let status_mcu = report.status_mcu;
+            let signature_qr = report.signature_qr;
 
             if (persons.length === 0) {
                 alert("Data crew kosong");
@@ -4282,7 +4386,9 @@
                 mcu: mcuArr.join(','),
                 persons: JSON.stringify(persons), // ⬅️ kirim SEMUA crew
                 date_mcu: date_mcu,
-                clinic_name: clicnic_name
+                clinic_name: clicnic_name,
+                status_mcu: status_mcu,
+                signature_qr: signature_qr
             };
 
             console.log("POST PDF MCU (ALL CREW):", postData);
@@ -10470,7 +10576,7 @@
           <div class="mt-5" style="width:40%;">
             <p>Hormat Kami,</p><br><br>
             <p class="fw-bold mb-0">Eva Marliana</p>
-            Ass. Crew Manager
+            Crew Manager
           </div>
 
         </div>
@@ -10513,7 +10619,7 @@
               <th>Date MCU</th>
               <th>Status</th>
               <th>Remarks Reject</th>
-              <th>Date Approve</th>
+              <th>Date Approve / Reject </th>
               <th>User Approve</th>
               <th>Action</th>
             </tr>

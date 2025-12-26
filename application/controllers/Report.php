@@ -6479,99 +6479,65 @@ class Report extends CI_Controller {
 	}
 
 	// /* Form MCU Start */
-	// public function generatePDF_MCU()
-	// {
-	// 	$crew = new stdClass();
-	// 	$crew->idperson    = $this->input->post('idperson', true);
-	// 	$crew->nama_crew   = $this->input->post('name_crew', true);
-	// 	$crew->jabatan     = $this->input->post('jabatan', true);
-	// 	$crew->vessel      = $this->input->post('vessel_name', true);
-	// 	$mcu = $this->input->post('mcu');
-  //   if (is_string($mcu)) {
-  //       $mcu = explode(',', $mcu);
-  //   }
+	public function generatePDF_MCU()
+	{
+			$personsJson = $this->input->post('persons');
+			$mcu         = $this->input->post('mcu');
+			$date_mcu = $this->input->post('date_mcu', TRUE);
+			$clinic_name = $this->input->post('clinic_name', TRUE);
+			$status_mcu = $this->input->post('status_mcu', TRUE);
+			$signature_qr = $this->input->post('signature_qr', TRUE);
 
-  //   for ($i = 0; $i < 10; $i++) {
-  //       $prop = 'mcu' . ($i + 1);
-  //       $crew->$prop = $mcu[$i]; 
-  //   }
-	// 	$data = array(
-	// 		'crew' => $crew
-	// 	);
+			if (empty($personsJson) || empty($mcu)) {
+					echo "Data MCU tidak lengkap";
+					exit;
+			}
 
-	// 	// print_r($data); exit;
-	// 	require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
+			$persons = json_decode($personsJson);
+			if (!is_array($persons)) {
+					echo "Format crew tidak valid";
+					exit;
+			}
 
-	// 	$mpdf = new mPDF('utf-8', 'A4');
-	// 	$mpdf->SetTitle('Form Debriefing');
-	// 	$mpdf->SetFont('dejavusans');
+			if (is_string($mcu)) {
+					$mcu = explode(',', $mcu);
+			}
 
-	// 	$html = $this->load->view('frontend/form_mcu_pdf', $data, TRUE);
-	// 	$mpdf->WriteHTML($html);
+			// MCU checkbox object
+			$mcuObj = new stdClass();
+			for ($i = 0; $i < 10; $i++) {
+					$prop = 'mcu' . ($i + 1);
+					$mcuObj->$prop = isset($mcu[$i]) ? $mcu[$i] : 0;
+			}
 
-	// 	$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
+			$data = array(
+					'persons' => $persons, // ⬅️ ALL CREW
+					'mcu'     => $mcuObj,
+					'date_mcu'=> $date_mcu,
+					'clinic_name'=> $clinic_name,
+					'status_mcu'=> $status_mcu,
+					'signature_qr'=> $signature_qr
+					
+			);
 
-	// 	$mpdf->Output($filename, 'I');
-	// 	exit;
+			// echo "<pre>";
+			// print_r($data);
+			// echo "</pre>";
+			// exit;
 
-	// }
-public function generatePDF_MCU()
-{
-    $personsJson = $this->input->post('persons');
-    $mcu         = $this->input->post('mcu');
-		$date_mcu = $this->input->post('date_mcu', TRUE);
-		$clinic_name = $this->input->post('clinic_name', TRUE);
+			require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 
-    if (empty($personsJson) || empty($mcu)) {
-        echo "Data MCU tidak lengkap";
-        exit;
-    }
+			$mpdf = new mPDF('utf-8', 'A4');
+			$mpdf->SetTitle('Form MCU');
+			$mpdf->SetFont('dejavusans');
 
-    $persons = json_decode($personsJson);
-    if (!is_array($persons)) {
-        echo "Format crew tidak valid";
-        exit;
-    }
+			$html = $this->load->view('frontend/form_mcu_pdf', $data, TRUE);
+			$mpdf->WriteHTML($html);
 
-    if (is_string($mcu)) {
-        $mcu = explode(',', $mcu);
-    }
-
-    // MCU checkbox object
-    $mcuObj = new stdClass();
-    for ($i = 0; $i < 10; $i++) {
-        $prop = 'mcu' . ($i + 1);
-        $mcuObj->$prop = isset($mcu[$i]) ? $mcu[$i] : 0;
-    }
-
-    $data = array(
-        'persons' => $persons, // ⬅️ ALL CREW
-        'mcu'     => $mcuObj,
-				'date_mcu'=> $date_mcu,
-				'clinic_name'=> $clinic_name
-				
-    );
-
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-		// exit;
-
-    require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
-
-    $mpdf = new mPDF('utf-8', 'A4');
-    $mpdf->SetTitle('Form MCU');
-    $mpdf->SetFont('dejavusans');
-
-    $html = $this->load->view('frontend/form_mcu_pdf', $data, TRUE);
-    $mpdf->WriteHTML($html);
-
-    $filename = "MCU_Form_" . date('Ymd_His') . ".pdf";
-    $mpdf->Output($filename, 'I');
-    exit;
-}
-
-
+			$filename = "MCU_Form_" . date('Ymd_His') . ".pdf";
+			$mpdf->Output($filename, 'I');
+			exit;
+	}
 
 	public function get_data_m_master_mcu()
 	{
@@ -6648,247 +6614,534 @@ public function generatePDF_MCU()
 			));
 	}
 
-public function submit_report_mcu()
-{
-    $post = $this->input->post(NULL, TRUE);
-		$id_clinic = $this->input->post('id_clinic', TRUE);
-		$date_mcu = $this->input->post('date_mcu', TRUE);
+	public function submit_report_mcu()
+	{
+			$post = $this->input->post(NULL, TRUE);
+			$id_clinic = $this->input->post('id_clinic', TRUE);
+			$date_mcu = $this->input->post('date_mcu', TRUE);
 
-		$userid = $this->session->userdata('idUserCrewSystem');
-		// var_dump($id_clinic); exit;
+			$userid = $this->session->userdata('idUserCrewSystem');
 
+			if (empty($post)) {
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Data kosong'
+					));
+					return;
+			}
 
-    if (empty($post)) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Data kosong'
-        ));
-        return;
-    }
+			$crewList = isset($post['crew_list']) ? $post['crew_list'] : array();
+			$mcu      = isset($post['mcu']) ? $post['mcu'] : array();
 
-    $crewList = isset($post['crew_list']) ? $post['crew_list'] : array();
-    $mcu      = isset($post['mcu']) ? $post['mcu'] : array();
+			$this->db->trans_begin();
 
-    $this->db->trans_begin();
+			$reportMcu = array(
+					'id_master_mcu' => $id_clinic,
+					'status_mcu' => 0,
+					'date_mcu'   => $date_mcu,
+					'addusrdate' => date('Y-m-d H:i:s'),
+					'userid_add' =>$userid,
+					'deletes'    => 0
+			);
 
-    /* =============================
-       1. INSERT report_mcu
-    ============================== */
-    $reportMcu = array(
-				'id_master_mcu' => $id_clinic,
-        'status_mcu' => 0,
-        'date_mcu'   => $date_mcu,
-        'addusrdate' => date('Y-m-d H:i:s'),
-				'userid_add' =>$userid,
-        'deletes'    => 0
-    );
+			$this->db->insert('report_mcu', $reportMcu);
+			$idReportMcu = $this->db->insert_id();
 
-    $this->db->insert('report_mcu', $reportMcu);
-    $idReportMcu = $this->db->insert_id();
+			if (!$idReportMcu) {
+					$this->db->trans_rollback();
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Gagal insert report_mcu'
+					));
+					return;
+			}
 
-    if (!$idReportMcu) {
-        $this->db->trans_rollback();
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Gagal insert report_mcu'
-        ));
-        return;
-    }
+			$answerData = array(
+					'id_report_mcu' => $idReportMcu,
+					'answer_1'  => isset($mcu[0]) ? $mcu[0] : NULL,
+					'answer_2'  => isset($mcu[1]) ? $mcu[1] : NULL,
+					'answer_3'  => isset($mcu[2]) ? $mcu[2] : NULL,
+					'answer_4'  => isset($mcu[3]) ? $mcu[3] : NULL,
+					'answer_5'  => isset($mcu[4]) ? $mcu[4] : NULL,
+					'answer_6'  => isset($mcu[5]) ? $mcu[5] : NULL,
+					'answer_7'  => isset($mcu[6]) ? $mcu[6] : NULL,
+					'answer_8'  => isset($mcu[7]) ? $mcu[7] : NULL,
+					'answer_9'  => isset($mcu[8]) ? $mcu[8] : NULL,
+					'answer_10' => isset($mcu[9]) ? $mcu[9] : NULL
+			);
 
-    /* =============================
-       2. INSERT report_answer_mcu
-    ============================== */
-    $answerData = array(
-        'id_report_mcu' => $idReportMcu,
-        'answer_1'  => isset($mcu[0]) ? $mcu[0] : NULL,
-        'answer_2'  => isset($mcu[1]) ? $mcu[1] : NULL,
-        'answer_3'  => isset($mcu[2]) ? $mcu[2] : NULL,
-        'answer_4'  => isset($mcu[3]) ? $mcu[3] : NULL,
-        'answer_5'  => isset($mcu[4]) ? $mcu[4] : NULL,
-        'answer_6'  => isset($mcu[5]) ? $mcu[5] : NULL,
-        'answer_7'  => isset($mcu[6]) ? $mcu[6] : NULL,
-        'answer_8'  => isset($mcu[7]) ? $mcu[7] : NULL,
-        'answer_9'  => isset($mcu[8]) ? $mcu[8] : NULL,
-        'answer_10' => isset($mcu[9]) ? $mcu[9] : NULL
-    );
+			$this->db->insert('report_answer_mcu', $answerData);
 
-    $this->db->insert('report_answer_mcu', $answerData);
+			foreach ($crewList as $crew) {
+					$namaCrew = trim($crew['name_crew']);
 
-    /* =============================
-       3. INSERT report_mcu_person
-    ============================== */
-    foreach ($crewList as $crew) {
+					$sql = "
+							SELECT idperson
+							FROM mstpersonal
+							WHERE CONCAT_WS(' ', fname, mname, lname) = ?
+							LIMIT 1
+					";
 
-        $namaCrew = trim($crew['name_crew']);
+					$query = $this->db->query($sql, array($namaCrew));
+					$row   = $query->row();
 
-        $sql = "
-            SELECT idperson
-            FROM mstpersonal
-            WHERE CONCAT_WS(' ', fname, mname, lname) = ?
-            LIMIT 1
-        ";
+					$idPerson = ($row) ? $row->idperson : NULL;
 
-        $query = $this->db->query($sql, array($namaCrew));
-        $row   = $query->row();
+					$personData = array(
+							'id_report_mcu' => $idReportMcu,
+							'id_person'     => $idPerson,
+							'name_person'   => $namaCrew,
+							'rank'          => $crew['jabatan'],
+							'vessel_name'   => $crew['vessel_name']
+					);
 
-        $idPerson = ($row) ? $row->idperson : NULL;
-
-        $personData = array(
-            'id_report_mcu' => $idReportMcu,
-            'id_person'     => $idPerson,
-            'name_person'   => $namaCrew,
-            'rank'          => $crew['jabatan'],
-            'vessel_name'   => $crew['vessel_name']
-        );
-
-        $this->db->insert('report_mcu_person', $personData);
-    }
-
-    /* =============================
-       FINISH
-    ============================== */
-    if ($this->db->trans_status() === FALSE) {
-        $this->db->trans_rollback();
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Gagal simpan MCU'
-        ));
-    } else {
-        $this->db->trans_commit();
-        echo json_encode(array(
-            'success' => true,
-            'message' => 'MCU berhasil disimpan',
-            'id_report_mcu' => $idReportMcu
-        ));
-    }
-}
+					$this->db->insert('report_mcu_person', $personData);
+			}
 
 
-public function get_report_mcu()
-{
-    $sql = "
-        SELECT 
-            a.id AS id_report_mcu,
-            b.clinic_name,
-            a.date_mcu,
-            a.status_mcu,
-            a.remarks_reject,
-            a.upuserdate,
-            a.userid_update
-        FROM report_mcu AS a
-        LEFT JOIN master_mcu AS b 
-            ON a.id_master_mcu = b.id
-        WHERE a.deletes = '0'
-        ORDER BY a.id DESC
-    ";
+			if ($this->db->trans_status() === FALSE) {
+					$this->db->trans_rollback();
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Gagal simpan MCU'
+					));
+			} else {
+					$this->db->trans_commit();
+					$this->sendNotificationMCU($idReportMcu);
+					echo json_encode(array(
+							'success' => true,
+							'message' => 'MCU berhasil disimpan',
+							'id_report_mcu' => $idReportMcu
+					));
+			}
+	}
 
-    $data = $this->MCrewscv->getDataQuery($sql);
-    $result = array();
 
-    if (!empty($data)) {
-        foreach ($data as $row) {
+	public function get_report_mcu()
+	{
+			$sql = "
+					SELECT 
+							a.id AS id_report_mcu,
+							b.clinic_name,
+							a.date_mcu,
+							a.status_mcu,
+							a.remarks_reject,
+							a.upuserdate,
+							a.userid_update
+					FROM report_mcu AS a
+					LEFT JOIN master_mcu AS b 
+							ON a.id_master_mcu = b.id
+					WHERE a.deletes = '0'
+					ORDER BY a.id DESC
+			";
 
-            // FORMAT TANGGAL DI PHP
-            $row->date_mcu = !empty($row->date_mcu)
-                ? date('d M Y', strtotime($row->date_mcu))
-                : '';
+			$data = $this->MCrewscv->getDataQuery($sql);
+			$result = array();
 
-            $row->upuserdate = !empty($row->upuserdate)
-                ? date('d M Y H:i:s', strtotime($row->upuserdate))
-                : '';
+			if (!empty($data)) {
+					foreach ($data as $row) {
 
-            $result[] = $row;
-        }
-    }
+							// FORMAT TANGGAL DI PHP
+							$row->date_mcu = !empty($row->date_mcu)
+									? date('d M Y', strtotime($row->date_mcu))
+									: '';
 
-    echo json_encode(array(
-        'success' => !empty($result),
-        'data'    => $result
-    ));
-}
+							$row->upuserdate = !empty($row->upuserdate)
+									? date('d M Y H:i:s', strtotime($row->upuserdate))
+									: '';
 
-public function get_report_mcu_detail()
-{
-    $id_report = $this->input->post('id_report', true);
+							$result[] = $row;
+					}
+			}
 
-    if (empty($id_report)) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'ID Report MCU tidak ditemukan'
-        ));
-        return;
-    }
+			echo json_encode(array(
+					'success' => !empty($result),
+					'data'    => $result
+			));
+	}
 
-    /* ===============================
-        1. DATA REPORT + ANSWER MCU
-    =============================== */
-    $sqlReport = "
-        SELECT 
-            a.id AS id_report,
-            b.clinic_name,
-            a.date_mcu,
-            c.answer_1,
-            c.answer_2,
-            c.answer_3,
-            c.answer_4,
-            c.answer_5,
-            c.answer_6,
-            c.answer_7,
-            c.answer_8,
-            c.answer_9,
-            c.answer_10
-        FROM report_mcu AS a
-        INNER JOIN master_mcu AS b 
-            ON a.id_master_mcu = b.id
-        INNER JOIN report_answer_mcu AS c
-            ON a.id = c.id_report_mcu
-        WHERE a.deletes = '0'
-          AND a.id = ?
-        LIMIT 1
-    ";
+	public function get_report_mcu_detail()
+	{
+			$id_report = $this->input->post('id_report', true);
 
-    $queryReport = $this->db->query($sqlReport, array($id_report));
-    $report = $queryReport->row();
+			if (empty($id_report)) {
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'ID Report MCU tidak ditemukan'
+					));
+					return;
+			}
 
-    if (!$report) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Data MCU tidak ditemukan'
-        ));
-        return;
-    }
+			$sqlReport = "
+					SELECT 
+							a.id AS id_report,
+							b.clinic_name,
+							a.date_mcu,
+							c.answer_1,
+							c.answer_2,
+							c.answer_3,
+							c.answer_4,
+							c.answer_5,
+							c.answer_6,
+							c.answer_7,
+							c.answer_8,
+							c.answer_9,
+							c.answer_10,
+							a.status_mcu,
+							a.signature_qr
+					FROM report_mcu AS a
+					INNER JOIN master_mcu AS b 
+							ON a.id_master_mcu = b.id
+					INNER JOIN report_answer_mcu AS c
+							ON a.id = c.id_report_mcu
+					WHERE a.deletes = '0'
+						AND a.id = ?
+					LIMIT 1
+			";
 
-    /* ===============================
-        2. DATA PERSON MCU
-    =============================== */
-    $sqlPerson = "
-        SELECT 
-            id,
-            id_report_mcu,
-            id_person,
-            name_person,
-            rank,
-            vessel_name
-        FROM report_mcu_person
-        WHERE id_report_mcu = ?
-        ORDER BY id ASC
-    ";
+			$queryReport = $this->db->query($sqlReport, array($id_report));
+			$report = $queryReport->row();
 
-    $queryPerson = $this->db->query($sqlPerson, array($id_report));
-    $persons = $queryPerson->result();
+			if (!$report) {
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Data MCU tidak ditemukan'
+					));
+					return;
+			}
 
-    /* ===============================
-        RESPONSE JSON
-    =============================== */
-    echo json_encode(array(
-        'success' => true,
-        'data' => array(
-            'report'  => $report,
-            'persons' => $persons
-        )
-    ));
-}
+			$sqlPerson = "
+					SELECT 
+							id,
+							id_report_mcu,
+							id_person,
+							name_person,
+							rank,
+							vessel_name
+					FROM report_mcu_person
+					WHERE id_report_mcu = ?
+					ORDER BY id ASC
+			";
 
+			$queryPerson = $this->db->query($sqlPerson, array($id_report));
+			$persons = $queryPerson->result();
+
+			echo json_encode(array(
+					'success' => true,
+					'data' => array(
+							'report'  => $report,
+							'persons' => $persons
+					)
+			));
+	}
+
+	private function sendNotificationMCU($idReport)
+	{
+
+			$sqlHeader = "
+					SELECT 
+							a.id AS id_report,
+							b.clinic_name,
+							a.date_mcu
+					FROM report_mcu AS a
+					INNER JOIN master_mcu AS b 
+							ON a.id_master_mcu = b.id
+					WHERE a.deletes = '0'
+						AND a.id = ?
+					LIMIT 1
+			";
+
+			$header = $this->db->query($sqlHeader, array($idReport))->row();
+			if (!$header) return;
+
+
+			$sqlPerson = "
+					SELECT name_person, rank, vessel_name
+					FROM report_mcu_person
+					WHERE id_report_mcu = ?
+					ORDER BY id ASC
+			";
+			$persons = $this->db->query($sqlPerson, array($idReport))->result();
+
+
+			$idEnc = base64_encode(base64_encode(base64_encode($idReport)));
+			$link  = base_url("report/print_approve_mcu/$idEnc");
+
+			$cmEmail = "helmi.tazkia@andhika.com";
+			$this->sendEmailMCU($cmEmail, $header, $persons, $link);
+	}
+
+	private function sendEmailMCU($to, $header, $persons, $link)
+	{
+			require_once APPPATH . 'third_party/PHPMailer/PHPMailer/class.phpmailer.php';
+			require_once APPPATH . 'third_party/PHPMailer/PHPMailer/class.smtp.php';
+
+			$mail = new PHPMailer();
+
+			try {
+					$mail->isSMTP();
+					$mail->Host       = 'smtp.zoho.com';
+					$mail->SMTPAuth   = true;
+					$mail->Username   = 'noreply@andhika.com';
+					$mail->Password   = 'PCWLzCWDQH8C';
+					$mail->SMTPSecure = 'tls';
+					$mail->Port       = 587;
+
+					$mail->setFrom('noreply@andhika.com', 'Crewing System');
+					$mail->addAddress($to);
+
+					$mail->isHTML(true);
+					$mail->Subject = 'Medical Check Up (MCU) Request';
+
+					$crewHtml = '<table border="1" cellpadding="6" cellspacing="0" width="100%">
+							<tr>
+									<th>No</th>
+									<th>Nama</th>
+									<th>Jabatan</th>
+									<th>Kapal</th>
+							</tr>';
+
+					$no = 1;
+					foreach ($persons as $p) {
+							$crewHtml .= "
+									<tr>
+											<td align='center'>$no</td>
+											<td>{$p->name_person}</td>
+											<td>{$p->rank}</td>
+											<td>{$p->vessel_name}</td>
+									</tr>";
+							$no++;
+					}
+					$crewHtml .= '</table>';
+					$mail->Body = "
+							<p>Dear Crew Manager / Bu Eva Marliana,</p>
+
+							<p>Berikut permintaan <strong>Medical Check Up (MCU)</strong> yang telah disubmit:</p>
+
+							<ul>
+									<li><strong>Klinik:</strong> {$header->clinic_name}</li>
+									<li><strong>Tanggal MCU:</strong> ".date('d M Y', strtotime($header->date_mcu))."</li>
+							</ul>
+
+							<p><strong>Daftar Crew:</strong></p>
+							$crewHtml
+
+							<p>
+									<strong>Preview / Print MCU:</strong><br>
+									<a href='$link'>Klik di sini</a>
+							</p>
+
+							<br>
+							<p><em>Email ini dikirim otomatis oleh Crewing System.</em></p>
+					";
+
+					if (!$mail->send()) {
+							log_message('error', 'MCU EMAIL ERROR: '.$mail->ErrorInfo);
+							echo json_encode(array(
+									'success' => false,
+									'message' => 'Email gagal dikirim: '.$mail->ErrorInfo
+							));
+							exit;
+					}
+
+
+			} catch (Exception $e) {
+					log_message('error', 'MCU Email Error: ' . $mail->ErrorInfo);
+			}
+	}
+
+	public function delete_list_mcu()
+		{
+				$id_report = $this->input->post('id_report', true);
+
+				if (empty($id_report)) {
+						echo json_encode(array(
+								'success' => false,
+								'message' => 'ID Report MCU tidak ditemukan'
+						));
+						return;
+				}
+
+				$this->db->where('id', $id_report);
+				$this->db->update('report_mcu', array('deletes' => 1));
+
+				echo json_encode(array(
+								'success' => true,
+								'message' => 'Data MCU berhasil dihapus'
+						));
+		}
+
+		public function print_approve_mcu($hashId = ''){
+				if (empty($hashId)) {
+						show_error('ID MCU tidak valid');
+						return;
+				}
+
+				$id_report = base64_decode(base64_decode(base64_decode($hashId)));
+
+				if (!is_numeric($id_report)) {
+						show_error('ID MCU tidak valid');
+						return;
+				}
+
+				$sqlReport = "
+						SELECT 
+								a.id AS id_report,
+								b.clinic_name,
+								a.date_mcu,
+								c.answer_1,
+								c.answer_2,
+								c.answer_3,
+								c.answer_4,
+								c.answer_5,
+								c.answer_6,
+								c.answer_7,
+								c.answer_8,
+								c.answer_9,
+								c.answer_10,
+								a.signature_qr,
+								a.status_mcu
+						FROM report_mcu AS a
+						INNER JOIN master_mcu AS b 
+								ON a.id_master_mcu = b.id
+						INNER JOIN report_answer_mcu AS c
+								ON a.id = c.id_report_mcu
+						WHERE a.deletes = '0'
+							AND a.id = ?
+						LIMIT 1
+				";
+
+				$report = $this->db->query($sqlReport, array($id_report))->row();
+
+				if (!$report) {
+						show_error('Data MCU tidak ditemukan');
+						return;
+				}
+
+
+				$sqlPerson = "
+						SELECT 
+								name_person,
+								rank,
+								vessel_name
+						FROM report_mcu_person
+						WHERE id_report_mcu = ?
+						ORDER BY id ASC
+				";
+
+				$persons = $this->db->query($sqlPerson, array($id_report))->result();
+
+				$mcu = new stdClass();
+				for ($i = 1; $i <= 10; $i++) {
+						$prop = 'mcu' . $i;
+						$ans  = 'answer_' . $i;
+						$mcu->$prop = (int) $report->$ans; // PERSIS dari DB
+				}
+
+	
+				$data = array(
+						'clinic_name' => $report->clinic_name,
+						'date_mcu'    => $report->date_mcu,
+						'mcu'         => $mcu,
+						'persons'     => $persons,
+						'id_report'   => $id_report,
+						'hash_id'     => $hashId,
+						'signature_qr'=> $report->signature_qr,
+						'status_mcu'  => $report->status_mcu
+				);
+
+				$this->load->view('frontend/print_approve_mcu', $data);
+		}
+
+		public function approve_mcu()
+		{
+				$hashId = $this->input->post('hash_id', true);
+
+				if (empty($hashId)) {
+						show_error('Invalid MCU ID');
+				}
+
+				$idReport = base64_decode(base64_decode(base64_decode($hashId)));
+
+				if (!is_numeric($idReport)) {
+						show_error('Invalid MCU ID');
+				}
+
+				$qrImg = $this->createQRCodeMCU($idReport, 'approveCM');
+				$update = array(
+						'upuserdate'   => date('Y-m-d H:i:s'),
+						'status_mcu' => 1,
+						'signature_qr' => $qrImg
+				);
+
+				$this->db->where('id', $idReport);
+				$this->db->update('report_mcu', $update);
+
+				redirect('report/print_approve_mcu/'.$hashId);
+		}
+
+		public function reject_mcu(){
+			$hashId        = $this->input->post('hash_id', true);
+			$remarks_reject  = $this->input->post('remarks_reject', true);
+
+			if (empty($hashId)) {
+					show_error('Invalid MCU ID');
+			}
+
+			$idReport = base64_decode(base64_decode(base64_decode($hashId)));
+
+			if (!is_numeric($idReport)) {
+					show_error('Invalid MCU ID');
+			}
+
+			if (empty($remarks_reject)) {
+					show_error('Remark reject wajib diisi');
+			}
+
+			$update = array(
+					'upuserdate'    => date('Y-m-d H:i:s'),
+					'status_mcu'    => 2, // 2 = REJECT
+					'remarks_reject' => $remarks_reject,
+					'date_reject'   => date('Y-m-d H:i:s')
+			);
+
+			$this->db->where('id', $idReport);
+			$this->db->update('report_mcu', $update);
+
+			// redirect ke halaman detail / list (sesuaikan)
+			redirect('/report');
+		}
+
+
+		private function createQRCodeMCU($id, $type = 'approveCM')
+		{
+				$this->load->library('ciqrcode');
+
+				$config = array(
+						'cacheable' => true,
+						'cachedir'  => './assets/imgQRCodeMCU/',
+						'errorlog'  => './assets/imgQRCodeMCU/',
+						'imagedir'  => './assets/imgQRCodeCrewCV/',
+						'quality'   => true,
+						'size'      => '1024'
+				);
+
+				$this->ciqrcode->initialize($config);
+
+				$imgName = 'approveCM_' .  base64_encode(base64_encode(base64_encode($id))) . '.png';
+
+				$params = array(
+						'data'     => "http://apps.andhika.com/myapps/myLetter/viewLetter/" . base64_encode($id),
+						'level'    => 'H',
+						'size'     => 6,
+						'savename' => FCPATH . $config['imagedir'] . $imgName,
+						'logo'     => base_url('assets/img/andhika.png')
+				);
+
+				$this->ciqrcode->generate($params);
+
+				return $imgName;
+		}
 
 
 }
