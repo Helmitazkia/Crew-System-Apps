@@ -4143,7 +4143,7 @@
 
         function loadReportMCU() {
             $.ajax({
-                url: "<?= base_url('report/get_report_mcu'); ?>",
+                url: "<?php echo base_url('report/get_report_mcu'); ?>",
                 type: "GET",
                 dataType: "json",
                 success: function (res) {
@@ -4231,7 +4231,7 @@
                 }
 
                 $.ajax({
-                    url: "<?= base_url('report/get_report_mcu_detail'); ?>",
+                    url: "<?php echo base_url('report/get_report_mcu_detail'); ?>",
                     type: "POST",
                     dataType: "json",
                     data: {
@@ -4277,7 +4277,7 @@
                     preConfirm: () => {
                         return new Promise((resolve, reject) => {
                             $.ajax({
-                                url: "<?= base_url('report/delete_list_mcu'); ?>",
+                                url: "<?php echo base_url('report/delete_list_mcu'); ?>",
                                 type: "POST",
                                 dataType: "json",
                                 data: {
@@ -4359,7 +4359,7 @@
             // console.log("POST PDF MCU (ALL CREW):", postData);
 
             let form = $('<form>', {
-                action: "<?= base_url('report/generatePDF_MCU'); ?>",
+                action: "<?php echo base_url('report/generatePDF_MCU'); ?>",
                 method: "POST",
                 target: "_blank"
             });
@@ -4419,7 +4419,7 @@
 
         function submitPostDataMCUFORM(data) {
             $.ajax({
-                url: "<?= base_url('report/submit_report_mcu'); ?>",
+                url: "<?php echo base_url('report/submit_report_mcu'); ?>",
                 type: "POST",
                 dataType: "json",
                 data: data,
@@ -10336,7 +10336,7 @@
                         console.log(keyword," ini keyword ");
 
                         $.ajax({
-                        url: "<?= base_url('report/get_crew_by_name'); ?>",
+                        url: "<?php echo base_url('report/get_crew_by_name'); ?>",
                         type: "POST",
                         dataType: "json",
                         data: { keyword: keyword },
@@ -10418,7 +10418,7 @@
                     <input
                         type="date"
                         id="val-tglcreate-mcu"
-                        value="<?= date('Y-m-d'); ?>"
+                        value="<?php echo date('Y-m-d'); ?>"
                         style="margin-top:4px;margin-left:4px;width:70%;border-radius:10px;">
                     </td>
                 </tr>

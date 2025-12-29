@@ -59,7 +59,7 @@
 </head>
 
 <body <?php if ($status_mcu == 2): ?> style="
-        background-image: url('<?= base_url('assets/img/rejected.jpg') ?>');
+        background-image: url('./assets/img/rejected.jpg');
         background-repeat: no-repeat;
         background-position: center;
         background-size: 200px 200px;
@@ -241,7 +241,7 @@
     <div class="signature">
       <p>Hormat Kami,</p>
       <?php if ($status_mcu == 1 || $status_mcu == 2): ?>
-      <img src="<?= base_url('assets/imgQRCodeCrewCV/'.$signature_qr); ?>" style="height:60px;"><br>
+      <img src="<?php echo ('./assets/imgQRCodeCrewCV/'.$signature_qr); ?>" style="height:60px;"><br>
       <?php endif; ?>
       <strong>Eva Marliana</strong><br>
       Crew Manager

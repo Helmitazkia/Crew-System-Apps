@@ -7242,18 +7242,21 @@ class Report extends CI_Controller {
 					show_error('Remark reject wajib diisi');
 			}
 
+		  $qrImg = $this->createQRCodeMCU($idReport, 'rejectCM');
+
 			$update = array(
 					'upuserdate'    => date('Y-m-d H:i:s'),
 					'status_mcu'    => 2, // 2 = REJECT
 					'remarks_reject' => $remarks_reject,
-					'date_reject'   => date('Y-m-d H:i:s')
+					'date_reject'   => date('Y-m-d H:i:s'),
+					'signature_qr'  => $qrImg
 			);
 
 			$this->db->where('id', $idReport);
 			$this->db->update('report_mcu', $update);
 
-			// redirect ke halaman detail / list (sesuaikan)
-			redirect('/report');
+			redirect('report/print_approve_mcu/'.$hashId);
+
 		}
 
 
@@ -7263,8 +7266,8 @@ class Report extends CI_Controller {
 
 				$config = array(
 						'cacheable' => true,
-						'cachedir'  => './assets/imgQRCodeMCU/',
-						'errorlog'  => './assets/imgQRCodeMCU/',
+						'cachedir'  => './assets/imgQRCodeCrewCV/',
+						'errorlog'  => './assets/imgQRCodeCrewCV/',
 						'imagedir'  => './assets/imgQRCodeCrewCV/',
 						'quality'   => true,
 						'size'      => '1024'
@@ -7272,7 +7275,7 @@ class Report extends CI_Controller {
 
 				$this->ciqrcode->initialize($config);
 
-				$imgName = 'approveCM_' .  base64_encode(base64_encode(base64_encode($id))) . '.png';
+				$imgName = $type . '_' .  base64_encode(base64_encode(base64_encode($id))) . '.png';
 
 				$params = array(
 						'data'     => "http://apps.andhika.com/myapps/myLetter/viewLetter/" . base64_encode($id),
