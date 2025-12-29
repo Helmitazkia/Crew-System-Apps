@@ -4181,7 +4181,6 @@
                                         ${row.remarks_reject ?? ''}
                                     </td>
                                     <td>${row.upuserdate ?? ''}</td>
-                                    <td>${row.userid_update ?? ''}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-info btn-sm view-btn mr-1" 
                                                 data-id="${row.id_report_mcu}" 
@@ -4238,9 +4237,6 @@
                     data: {
                         id_report: idReport
                     },
-                    // beforeSend: function () {
-                    //     // console.log("Loading MCU detail...");
-                    // },
                     success: function (res) {
                         console.log(res, "MCU DETAIL");
 
@@ -4257,103 +4253,72 @@
                 });
             });
 
-
-            // $(document).on('click', '.delete-btn', function () {
-            //     var idReport = $(this).data('id');
-            //     // console.log("View MCU ID:", idReport);
-            //     if (!idReport) {
-            //         alert('ID Report tidak ditemukan');
-            //         return;
-            //     }
-
-            //     $.ajax({
-            //         url: "<?= base_url('report/delete_list_mcu'); ?>",
-            //         type: "POST",
-            //         dataType: "json",
-            //         data: {
-            //             id_report: idReport
-            //         },
-            //         success: function (res) {
-            //             if (!res.success) {
-            //                 alert(res.message);
-            //                 return;
-            //             }
-            //             alert('Data MCU berhasil dihapus');
-            //             loadReportMCU();
-                     
-            //         },
-            //         error: function (xhr) {
-            //             console.error(xhr.responseText);
-            //             alert('Gagal mengambil data MCU');
-            //         }
-            //     });
-            // });
-               $(document).on('click', '.delete-btn', function () {
-                    var idReport = $(this).data('id');
-                    
-                    if (!idReport) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Oops...',
-                            text: 'ID Report tidak ditemukan!'
-                        });
-                        return;
-                    }
-
-                    // SweetAlert Confirmation
+            $(document).on('click', '.delete-btn', function () {
+                var idReport = $(this).data('id');
+                
+                if (!idReport) {
                     Swal.fire({
-                        title: "Are you sure?",
-                        text: "You won't be able to revert this!",
-                        icon: "warning",
-                        showCancelButton: true,
-                        confirmButtonColor: "#3085d6",
-                        cancelButtonColor: "#d33",
-                        confirmButtonText: "Yes, delete it!",
-                        preConfirm: () => {
-                            return new Promise((resolve, reject) => {
-                                $.ajax({
-                                    url: "<?= base_url('report/delete_list_mcu'); ?>",
-                                    type: "POST",
-                                    dataType: "json",
-                                    data: {
-                                        id_report: idReport
-                                    },
-                                    success: function (res) {
-                                        resolve(res);
-                                    },
-                                    error: function (xhr) {
-                                        console.error(xhr.responseText);
-                                        reject('Terjadi kesalahan pada server');
-                                    }
-                                });
-                            });
-                        },
-                        allowOutsideClick: () => !Swal.isLoading()
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            if (result.value.success) {
-                                // Langsung load data baru setelah delete sukses
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil!',
-                                    text: result.value.message || 'Data berhasil dihapus!',
-                                    confirmButtonText: 'OK',
-                                    confirmButtonColor: '#28a745'
-                                });
-                                loadReportMCU();
-                            } else {
-                                // Tampilkan error jika gagal
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Gagal!',
-                                    text: result.value.message || 'Gagal menghapus data',
-                                    confirmButtonText: 'OK',
-                                    confirmButtonColor: '#d33'
-                                });
-                            }
-                        }
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'ID Report tidak ditemukan!'
                     });
+                    return;
+                }
+
+                // SweetAlert Confirmation
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!",
+                    preConfirm: () => {
+                        return new Promise((resolve, reject) => {
+                            $.ajax({
+                                url: "<?= base_url('report/delete_list_mcu'); ?>",
+                                type: "POST",
+                                dataType: "json",
+                                data: {
+                                    id_report: idReport
+                                },
+                                success: function (res) {
+                                    resolve(res);
+                                },
+                                error: function (xhr) {
+                                    console.error(xhr.responseText);
+                                    reject('Terjadi kesalahan pada server');
+                                }
+                            });
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (result.value.success) {
+                            // Langsung load data baru setelah delete sukses
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: result.value.message || 'Data berhasil dihapus!',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#28a745'
+                            });
+                            loadReportMCU();
+                        } else {
+                            // Tampilkan error jika gagal
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal!',
+                                text: result.value.message || 'Gagal menghapus data',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#d33'
+                            });
+                        }
+                    }
                 });
+            });
         });
 
 
@@ -10620,7 +10585,6 @@
               <th>Status</th>
               <th>Remarks Reject</th>
               <th>Date Approve / Reject </th>
-              <th>User Approve</th>
               <th>Action</th>
             </tr>
           </thead>

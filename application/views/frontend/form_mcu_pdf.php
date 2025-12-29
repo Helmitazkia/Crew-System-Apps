@@ -70,15 +70,15 @@
   <div class="page">
 
     <!-- HEADER -->
-    <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';" border="1">
+    <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';">
       <tr>
         <!-- KIRI : LOGO -->
         <td width="6%" align="left" valign="middle">
-          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:50px;">
+          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:40px;">
         </td>
 
         <!-- TENGAH : JUDUL -->
-        <td width="50%" align="left" valign="middle" style="padding-top:27px;">
+        <td width="50%" align="left" valign="middle" style="padding-top:20px;">
           <div style="font-size:17px; font-weight:bold;">
             PT. ANDHINI EKA KARYA SEJAHTERA
           </div>
