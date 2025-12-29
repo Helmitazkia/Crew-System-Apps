@@ -4124,110 +4124,400 @@
         }
 
         /*start form mcu*/
-        function click_form_mcu() {
-            var get_idperson = $("#txtIdPerson").val();
+        function open_modal_form_mcu() {
+            // Pertama sembunyikan modal report
+            $("#modal-report-mcu").modal("hide");
+            
+            // Setelah modal report benar-benar hidden, tampilkan modal form
+            $("#modal-report-mcu").on('hidden.bs.modal', function() {
+                $("#modal-form-mcu").modal("show");
+                // Hapus event handler agar tidak terpanggil berkali-kali
+                $(this).off('hidden.bs.modal');
+            });
+        }
 
-            if (!get_idperson) {
-                alert("Person Empty!");
-                return;
-            }
-            $("#modal-form-mcu").modal("show");
+        function click_report_mcu() {
+            $("#modal-report-mcu").modal("show");
+            loadReportMCU();
+        }
+
+        function loadReportMCU() {
             $.ajax({
-                url: "<?php echo base_url('report/get_data_form_defbreafing'); ?>",
-                type: "POST",
-                data: {
-                    idperson: get_idperson
-                },
+                url: "<?php echo base_url('report/get_report_mcu'); ?>",
+                type: "GET",
                 dataType: "json",
-                success: function(res) {
-                    // console.log(res);
-                    if (!res.success || !res.data) {
-                        alert("Data tidak ditemukan!");
-                        return;
+                success: function (res) {
+                    // console.log("Response MCU:", res);
+                    // return false;
+
+                    let html = '';
+
+                    if (!res.success || res.data.length === 0) {
+                        html = `
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    Data MCU tidak ditemukan
+                                </td>
+                            </tr>`;
+                    } else {
+                        $.each(res.data, function (i, row) {
+
+                            let statusText = '';
+                            if (row.status_mcu == 0) {
+                                statusText = '<button type="button" class="btn btn-info" style="border-radius:13px;background-color:#17a2b8;font-">Process</button>';
+                            } else if (row.status_mcu == 1) {
+                                statusText = '<button type="button" class="btn btn-success" style="border-radius:13px;">Approve</button>';
+                            } else if (row.status_mcu == 2) {
+                                statusText = '<button type="button" class="btn btn-danger" style="border-radius:13px;">Rejected</button>';
+                            }
+
+                            html += `
+                                <tr>
+                                    <td class="text-center">${i + 1}</td>
+                                    <td>${row.clinic_name ?? ''}</td>
+                                    <td>${row.date_mcu ?? ''}</td>
+                                    <td class="text-center">${statusText}</td>
+                                    <td style="max-width: 205px; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+                                        ${row.remarks_reject ?? ''}
+                                    </td>
+                                    <td>${row.upuserdate ?? ''}</td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-info btn-sm view-btn mr-1" 
+                                                data-id="${row.id_report_mcu}" 
+                                                data-toggle="tooltip" title="View File" id="view-file-list-mcu">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm delete-btn" 
+                                                data-id="${row.id_report_mcu}" 
+                                                data-toggle="tooltip" title="Delete" id="delete-list-mcu">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
                     }
-                    $("#name-crew-mcu").text(res.data[0].nama_crew);
-                    $("#jabatan-mcu").text(res.data[0].jabatan);
-                    $("#vessel-name-mcu").text(res.data[0].nama_kapal);
+
+                    $("#tbody-report-mcu").html(html);
                 },
-                error: function(xhr, status, error) {
-                    console.log("AJAX Error:", xhr.responseText);
-                    alert("Error fetching data.");
+                error: function (xhr) {
+                    console.error(xhr.responseText);
+                    $("#tbody-report-mcu").html(`
+                        <tr>
+                            <td colspan="7" class="text-center text-danger">
+                                Gagal mengambil data MCU
+                            </td>
+                        </tr>
+                    `);
                 }
             });
         }
 
+
+
         $(document).ready(function () {
-            $('#btn-form-mcu').on('click', function () {
+            $('#btn-submit-form-mcu').on('click', function () {
                 console.clear();
                 generate_form_MCUPDF();
             });
+
+
+            $(document).on('click', '.view-btn', function () {
+                var idReport = $(this).data('id');
+                // console.log("View MCU ID:", idReport);
+                if (!idReport) {
+                    alert('ID Report tidak ditemukan');
+                    return;
+                }
+
+                $.ajax({
+                    url: "<?php echo base_url('report/get_report_mcu_detail'); ?>",
+                    type: "POST",
+                    dataType: "json",
+                    data: {
+                        id_report: idReport
+                    },
+                    success: function (res) {
+                        console.log(res, "MCU DETAIL");
+
+                        if (!res.success) {
+                            alert(res.message);
+                            return;
+                        }
+                        PrintviewFileMcu(res.data);
+                    },
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                        alert('Gagal mengambil data MCU');
+                    }
+                });
+            });
+
+            $(document).on('click', '.delete-btn', function () {
+                var idReport = $(this).data('id');
+                
+                if (!idReport) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'ID Report tidak ditemukan!'
+                    });
+                    return;
+                }
+
+                // SweetAlert Confirmation
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!",
+                    preConfirm: () => {
+                        return new Promise((resolve, reject) => {
+                            $.ajax({
+                                url: "<?php echo base_url('report/delete_list_mcu'); ?>",
+                                type: "POST",
+                                dataType: "json",
+                                data: {
+                                    id_report: idReport
+                                },
+                                success: function (res) {
+                                    resolve(res);
+                                },
+                                error: function (xhr) {
+                                    console.error(xhr.responseText);
+                                    reject('Terjadi kesalahan pada server');
+                                }
+                            });
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (result.value.success) {
+                            // Langsung load data baru setelah delete sukses
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: result.value.message || 'Data berhasil dihapus!',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#28a745'
+                            });
+                            loadReportMCU();
+                        } else {
+                            // Tampilkan error jika gagal
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal!',
+                                text: result.value.message || 'Gagal menghapus data',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#d33'
+                            });
+                        }
+                    }
+                });
+            });
         });
 
-       
-        function generate_form_MCUPDF() {
 
-            var idperson = $("#txtIdPerson").val();
-            if (!idperson) {
-                alert("ID Person kosong!");
+        function PrintviewFileMcu(data) {
+            if (!data || !data.report || !data.persons) {
+                alert("Data MCU tidak valid");
                 return;
             }
 
+            let report  = data.report;
+            let persons = data.persons;
+            let date_mcu = report.date_mcu;
+            let clicnic_name = report.clinic_name;
+            let status_mcu = report.status_mcu;
+            let signature_qr = report.signature_qr;
+
+            if (persons.length === 0) {
+                alert("Data crew kosong");
+                return;
+            }
+
+            // MCU checkbox array
+            let mcuArr = [];
+            for (let i = 1; i <= 10; i++) {
+                mcuArr.push(report['answer_' + i]);
+            }
+
+
+            let postData = {
+                mcu: mcuArr.join(','),
+                persons: JSON.stringify(persons), // ⬅️ kirim SEMUA crew
+                date_mcu: date_mcu,
+                clinic_name: clicnic_name,
+                status_mcu: status_mcu,
+                signature_qr: signature_qr
+            };
+
+            // console.log("POST PDF MCU (ALL CREW):", postData);
+
+            let form = $('<form>', {
+                action: "<?php echo base_url('report/generatePDF_MCU'); ?>",
+                method: "POST",
+                target: "_blank"
+            });
+
+            $.each(postData, function (key, val) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: key,
+                    value: val
+                }).appendTo(form);
+            });
+
+            $('body').append(form);
+            form.submit();
+            form.remove();
+         }
+
+
+
+        function generate_form_MCUPDF() {
+            let crewList = [];
+            var id_clinic = idclinicmcu;
+            let date_mcu = $("#val-tglcreate-mcu").val();
+            // console.log("Clinic Selected:", id_clinic); 
+            // return false;
+            $("#table-mcu-crew tbody tr").each(function () {
+
+                let nameCrew   = $(this).find(".crew-name").val();
+                let jabatan    = $(this).find(".crew-rank").val();
+                let vesselName = $(this).find(".crew-vessel").val();
+
+                // skip row kosong
+                if (nameCrew) {
+                    crewList.push({
+                        name_crew: nameCrew,
+                        jabatan: jabatan,
+                        vessel_name: vesselName
+                    });
+                }
+            });
+
             const data = {
-                idperson: idperson,
-                name_crew: $("#name-crew-mcu").text().trim(),
-                jabatan: $("#jabatan-mcu").text().trim(),
-                vessel_name: $("#vessel-name-mcu").text().trim(),
+                id_clinic: id_clinic,
+                date_mcu: date_mcu,
+                crew_list: crewList,
                 mcu: []
             };
 
             for (let i = 1; i <= 10; i++) {
                 data.mcu.push($("#mcu" + i).is(":checked") ? 1 : 0);
             }
-            // console.log(data);
+
+            console.log(data, "FINAL SUBMIT DATA");
+
             submitPostDataMCUFORM(data);
         }
 
         function submitPostDataMCUFORM(data) {
-            const form = document.createElement('form');
-            form.id = 'tempnameMCUForm';
-            form.method = 'POST';
-            form.action = '<?php echo base_url("report/generatePDF_MCU"); ?>';
-            form.target = '_blank';
-            form.style.display = 'none';
+            $.ajax({
+                url: "<?php echo base_url('report/submit_report_mcu'); ?>",
+                type: "POST",
+                dataType: "json",
+                data: data,
+                beforeSend: function () {
+                    Swal.fire({
+                        title: 'Menyimpan...',
+                        text: 'Mohon tunggu',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
+               success: function (res) {
+                    console.log(res, "RESPONSE SUBMIT MCU");
+                    // kasih delay kecil biar UX halus (opsional)
+                    setTimeout(function () {
+                        Swal.close();
+                        if (res.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: 'Data MCU berhasil disimpan',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                $("#modal-form-mcu").modal("hide");
+                                resetFormMCU();
+                            });
 
-            // Tambahkan data
-            Object.keys(data).forEach(key => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = data[key];
-                form.appendChild(input);
-            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: res.message || 'Gagal menyimpan MCU'
+                            });
+                        }
 
+                    }, 600); // 0.6 detik (boleh 300–800)
+               },
+                error: function (xhr) {
+                    console.error("AJAX ERROR:", xhr.responseText);
 
-            const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
-            const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
-
-            if (csrfName && csrfHash) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = csrfName;
-                csrfInput.value = csrfHash;
-                form.appendChild(csrfInput);
-            }
-
-      
-            document.body.appendChild(form);
-            form.submit();
-
-            // Cleanup setelah 1 detik
-            setTimeout(() => {
-                if (document.getElementById('tempnameMCUForm')) {
-                    document.body.removeChild(form);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan saat mengirim data MCU'
+                    });
                 }
-            }, 1000);
+            });
         }
 
+
+        function resetFormMCU() {
+            /* =============================
+            1. RESET TABLE CREW
+            ============================== */
+            let tbody = $("#table-mcu-crew tbody");
+
+            tbody.html(`
+                <tr>
+                    <td class="text-center row-no">1</td>
+                    <td style="position:relative;">
+                        <input type="text" class="form-control form-control-sm crew-name">
+                        <div class="crew-suggest list-group" 
+                            style="position:absolute; z-index:1000; width:100%;"></div>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm crew-rank" readonly>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm crew-vessel" readonly>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-danger btn-remove-row">×</button>
+                    </td>
+                </tr>
+            `);
+
+            /* =============================
+            2. RESET CHECKBOX MCU (mcu1 - mcu10)
+            ============================== */
+            for (let i = 1; i <= 10; i++) {
+                $("#mcu" + i).prop("checked", false);
+            }
+
+            // /* =============================
+            // 3. RESET SELECT KLINIK
+            // ============================== */
+            // $("#slc-mcu-clinic").val("").trigger("change");
+            // $("#mcu-clinic-detail").html("");
+
+            // /* =============================
+            // 4. RESET DATE (KEMBALI KE TODAY)
+            // ============================== */
+            // $("#val-tglcreate-mlu-").val(new Date().toISOString().slice(0, 10));
+
+            console.log("Form MCU berhasil di-reset");
+        }
          /*Print Form MCU End */
 
     </script>
@@ -4659,7 +4949,7 @@
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="click_form_mcu();">
+                                        onclick="click_report_mcu();">
                                         <i class="fa fa-print"></i> MCU
                                     </button>
                                 </div>
@@ -9897,7 +10187,7 @@
 
  <div class="modal fade" id="modal-form-mcu" tabindex="-1">
   <div class="modal-dialog modal-xl"  role="document">>
-    <div class="modal-content" style="width: 650px;margin-left: -50px;">
+    <div class="modal-content" style="width: 750px;margin-left: -50px;">
       <!-- MODAL BODY -->
       <div class="modal-body" id="content-mcu">
         <table width="100%" cellpadding="5" cellspacing="0"
@@ -9935,25 +10225,205 @@
         </table>
         <br>
 
-        
+        <script>
+            var idclinicmcu = "";
+           $(document).ready(function () {
+                $.ajax({
+                    url: "<?php echo base_url('report/get_data_m_master_mcu'); ?>",
+                    type: "POST",
+                    dataType: "json",
+                    success: function (res) {
+
+                    if (!res.success || !res.data) return;
+
+                    // SIMPAN DATA PERTAMA
+                    window.mcuClinicData = res.data;
+
+                    let htmlOption = '';
+                    let defaultIndex = 0;
+
+                    $.each(res.data, function (i, item) {
+
+                        htmlOption += `
+                        <option value="${i}">
+                            ${item.clinic_name}
+                        </option>
+                        `;
+
+                        if (item.clinic_name === 'INDOSEHAT 2003 MEDICAL CENTRE') {
+                            defaultIndex = i;
+                        
+                        }
+                    });
+
+                    $("#slc-mcu-clinic").append(htmlOption);
+
+                    // BARU trigger change
+                    $("#slc-mcu-clinic").val(defaultIndex).trigger('change');
+                    }
+                });
+
+                $("#slc-mcu-clinic").on("change", function () {
+
+                    if (!window.mcuClinicData) return;
+
+                    let idx = $(this).val();
+                    if (idx === "") return;
+
+                    let d = window.mcuClinicData[idx];
+                    idclinicmcu = d.id;
+
+                    let detail = `
+                    ${d.address_clinic}<br>
+                    Telp: ${d.telp ?? '-'}<br>
+                    Fax: ${d.fax ?? '-'}
+                    `;
+
+                    $("#mcu-clinic-detail").html(detail);
+                });
+                
+                  /* =========================
+                        ADD ROW
+                    ========================== */
+                    $("#btn-add-row-mcu").on("click", function () {
+                        let rowCount = $("#table-mcu-crew tbody tr").length + 1;
+
+                        let row = `
+                        <tr>
+                            <td class="text-center row-no">${rowCount}</td>
+                            <td style="position:relative;">
+                            <input type="text" class="form-control form-control-sm crew-name">
+                            <div class="crew-suggest list-group" style="position:absolute; z-index:1000; width:100%;"></div>
+                            </td>
+                            <td><input type="text" class="form-control form-control-sm crew-rank" readonly></td>
+                            <td><input type="text" class="form-control form-control-sm crew-vessel" readonly></td>
+                            <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger btn-remove-row">×</button>
+                            </td>
+                        </tr>
+                        `;
+
+                        $("#table-mcu-crew tbody").append(row);
+                    });
+
+                    /* =========================
+                        REMOVE ROW
+                    ========================== */
+                    $(document).on("click", ".btn-remove-row", function () {
+                        $(this).closest("tr").remove();
+                        renumberRow();
+                    });
+
+                    function renumberRow() {
+                        $("#table-mcu-crew tbody tr").each(function (i) {
+                        $(this).find(".row-no").text(i + 1);
+                        });
+                    }
+
+                    /* =========================
+                        SEARCH CREW NAME
+                    ========================== */
+                    $(document).on("keyup", ".crew-name", function () {
+                        let keyword = $(this).val();
+                        let row = $(this).closest("tr");
+                        let suggestBox = row.find(".crew-suggest");
+
+                        if (keyword.length < 2) {
+                        suggestBox.empty();
+                        return;
+                        }
+
+                        console.log(keyword," ini keyword ");
+
+                        $.ajax({
+                        url: "<?php echo base_url('report/get_crew_by_name'); ?>",
+                        type: "POST",
+                        dataType: "json",
+                        data: { keyword: keyword },
+                        success: function (res) {
+                            suggestBox.empty();
+
+                            if (res.success) {
+                            $.each(res.data, function (i, item) {
+                                suggestBox.append(`
+                                <a href="#" class="list-group-item list-group-item-action crew-item"
+                                    data-name="${item.nama_crew}"
+                                    data-rank="${item.jabatan}"
+                                    data-vessel="${item.vessel}">
+                                    ${item.nama_crew}
+                                </a>
+                                `);
+                            });
+                            }
+                        }
+                        });
+                    });
+
+                    /* =========================
+                        CLICK SUGGESTION
+                    ========================== */
+                    $(document).on("click", ".crew-item", function (e) {
+                        e.preventDefault();
+
+                        let row = $(this).closest("tr");
+
+                        row.find(".crew-name").val($(this).data("name"));
+                        row.find(".crew-rank").val($(this).data("rank"));
+                        row.find(".crew-vessel").val($(this).data("vessel"));
+
+                        row.find(".crew-suggest").empty();
+                    });
+
+            });
+
+
+        </script>
+
+
+            <style>
+            .crew-suggest {
+                position: absolute;
+                z-index: 1000;
+                width: 100%;
+                max-height: 180px;   /* ± 5 item */
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                background: #fff;
+                }
+
+            </style>
 
         <!-- ===== ISI SURAT ===== -->
-        <div style="font-family:'Times New Roman'; font-size:12px;">
-          <table class="table table-borderless table-sm">
-            <tr>
-              <td>
-                Kepada Yth:<br>
-                INDOSEHAT 2003 MEDICAL CENTRE<br>
-                Jl. Cilincing Raya No. 74<br>
-                Tanjung Priok - Jakarta Utara<br>
-                Telp: (021) 4411281<br>
-                Fax: (021) 44830763
-              </td>
-              <td class="text-end" style="padding-left:220px;">
-                Jakarta, <?php echo date("d M Y", strtotime(date('Y-m-d'))); ?>
-              </td>
-            </tr>
-          </table>
+        <div style="font-family:'Times New Roman'; font-size:12px;width:100%" >
+         <table style="width:100%; table-layout:fixed;">
+                <tr>
+                    <!-- KIRI -->
+                    <td style="width:65%; vertical-align:top;">
+                    Kepada Yth:<br>
+
+                    <select id="slc-mcu-clinic"
+                        class="form-select form-select-sm"
+                        style="width:70%;height:30px;border-radius:7px;padding-left:6px;">
+                        <!-- <option value="">-- Pilih Klinik MCU --</option> -->
+                    </select>
+
+                    <div id="mcu-clinic-detail" style="margin-top:6px;">
+                        <!-- alamat / telp / fax -->
+                    </div>
+                    </td>
+
+                    <!-- KANAN -->
+                    <td class="text-end" style="width:35%; padding-left:20px;">
+                    Jakarta :
+                    <input
+                        type="date"
+                        id="val-tglcreate-mcu"
+                        value="<?php echo date('Y-m-d'); ?>"
+                        style="margin-top:4px;margin-left:4px;width:70%;border-radius:10px;">
+                    </td>
+                </tr>
+                </table>
+
 
           <p class="text-center fw-bold" style="font-weight:bold;font-size:15px;">
             TOP TOP URGENT<br>_______________________________
@@ -10005,7 +10475,7 @@
 
           <p class="mt-3">Pemeriksaan dilaksanakan untuk crew kami:</p>
 
-          <table class="table table-bordered table-sm">
+          <!-- <table class="table table-bordered table-sm">
             <thead class="text-center">
               <tr>
                 <th>No</th>
@@ -10021,8 +10491,43 @@
                 <td id="jabatan-mcu"></td>
                 <td id="vessel-name-mcu"></td>
               </tr>
+            </tbody>    
+          </table> -->
+
+            <div class="d-flex justify-content-end mb-2" style="margin-top:7px;">
+                <button type="button" class="btn btn-sm btn-success" id="btn-add-row-mcu">
+                    + Tambah Crew
+                </button>
+            </div>
+
+        <table class="table table-bordered table-sm" id="table-mcu-crew" style="margin-top:5px;">
+            <thead class="text-center">
+                <tr>
+                <th style="width:40px;">No</th>
+                <th>Nama</th>
+                <th>Jabatan</th>
+                <th>Kapal</th>
+                <th style="width:60px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                <td class="text-center row-no">1</td>
+                <td style="position:relative;">
+                    <input type="text" class="form-control form-control-sm crew-name">
+                    <div class="crew-suggest list-group" style="position:absolute; z-index:1000; width:100%;"></div>
+                </td>
+                <td><input type="text" class="form-control form-control-sm crew-rank" style="wrap-text:break-word;" readonly></td>
+                <td><input type="text" class="form-control form-control-sm crew-vessel" style="wrap-text:break-word;" readonly></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger btn-remove-row">×</button>
+                </td>
+                </tr>
             </tbody>
-          </table>
+        </table>
+
+ 
+
 
           <p>Harap biaya dalam proses tersebut dibebankan pada :</p>
 
@@ -10035,8 +10540,8 @@
 
           <div class="mt-5" style="width:40%;">
             <p>Hormat Kami,</p><br><br>
-            <p class="fw-bold mb-0">Hadjid</p>
-            Ass.Crew Manager
+            <p class="fw-bold mb-0">Eva Marliana</p>
+            Crew Manager
           </div>
 
         </div>
@@ -10044,15 +10549,63 @@
 
       <!-- FOOTER -->
        <div class="modal-footer">
-            <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
-            <button type="button" class="btn btn-primary" id="btn-form-mcu">
+            <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="click_report_mcu();">Tutup</button>
+            <!-- <button type="button" class="btn btn-primary" id="btn-form-mcu">
                 <i class="bi bi-printer"></i> Print
+            </button> -->
+            <button type="button" class="btn btn-success" id="btn-submit-form-mcu">
+                <i class="bi bi-printer"></i> Submit
             </button>
         </div>
 
     </div>
   </div>
 </div>
+
+
+<!-- Modal Report MCU -->   
+<div class="modal fade" id="modal-report-mcu" tabindex="-1" role="dialog">
+   <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+
+        <div class="modal-header" style="background-color:#0080FF;  color:white;">
+            <h4 class="modal-title" style="color:white;">List Medical Check Up (MCU)</h4>
+        </div>
+      <div class="modal-body">
+        <button type="button" class="btn btn-success" style="padding-left:10px; font-size: 17px;" onclick="open_modal_form_mcu()">
+            + New
+        </button>
+        <br>
+        <table class="table table-bordered table-sm table-striped" border="1" style="margin-top:20px;">
+          <thead class="table-light text-center">
+            <tr>
+              <th style="width:40px;">No</th>
+              <th>Klinik</th>
+              <th>Date MCU</th>
+              <th>Status</th>
+              <th>Remarks Reject</th>
+              <th>Date Approve / Reject </th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-report-mcu">
+            <tr>
+              <td colspan="7" class="text-center text-muted">
+                Loading data...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
 
 

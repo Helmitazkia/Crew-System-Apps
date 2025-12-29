@@ -39,20 +39,16 @@
       margin-top: 15px;
     }
 
-    /* Checkbox aman mPDF */
     .box {
       display: inline-block;
       width: 16px;
       height: 16px;
       line-height: 16px;
-      /* KUNCI */
       border: 1.2px solid #000;
       text-align: center;
       vertical-align: middle;
       margin-right: 6px;
-      /* JANGAN LEBIH BESAR */
     }
-
 
     .signature {
       margin-top: 40px;
@@ -62,7 +58,14 @@
   </style>
 </head>
 
-<body>
+<body <?php if ($status_mcu == 2): ?> style="
+        background-image: url('./assets/img/rejected.jpg');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 200px 200px;
+        background-attachment: fixed;
+        opacity: 0.1;
+    " <?php endif; ?>>
 
   <div class="page">
 
@@ -70,12 +73,12 @@
     <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';">
       <tr>
         <!-- KIRI : LOGO -->
-        <td width="7%" align="left" valign="middle">
-          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:50px;">
+        <td width="6%" align="left" valign="middle">
+          <img src="./assets/img/Logo_Andhika_2017.jpg" style="height:40px;">
         </td>
 
         <!-- TENGAH : JUDUL -->
-        <td width="50%" align="left" valign="middle">
+        <td width="50%" align="left" valign="middle" style="padding-top:20px;">
           <div style="font-size:17px; font-weight:bold;">
             PT. ANDHINI EKA KARYA SEJAHTERA
           </div>
@@ -102,14 +105,14 @@
       <tr>
         <td>
           Kepada Yth:<br>
-          INDOSEHAT 2003 MEDICAL CENTRE<br>
+          <?php echo $clinic_name; ?><br>
           Jl. Cilincing Raya No. 74<br>
           Tanjung Priok - Jakarta Utara<br>
           Telp: (021) 4411281<br>
           Fax: (021) 44830763
         </td>
         <td class="right">
-          Jakarta, <?php echo date('d M Y'); ?>
+          Jakarta, <?php echo date('d M Y', strtotime($date_mcu)); ?>
         </td>
       </tr>
     </table>
@@ -119,39 +122,39 @@
     <p>Dengan hormat,<br>Bersama ini kami mohon agar dapat dilakukan pemeriksaan:</p>
 
     <!-- MCU LIST -->
-    <table style="width:600px;">
+    <table style="width:700px;">
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu1==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
-          1. Medical Check Up Standart Perla 
+            style="font-family: 'DejaVu Sans'; font-size: 16px;word-wrap: break-word;"><?php echo ($mcu->mcu1==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          1. Medical Check Up Standart Perla
         </td>
       </tr>
       <tr>
         <td>
           <span class="box" style="font-family: 'DejaVu Sans'; font-size: 16px;"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu2==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
-          2. Medical Check Up Kerajaan Malaysia  
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu2==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+          2. Medical Check Up Kerajaan Malaysia
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu3==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu3==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           <strong>3. Medical Check Up Panama + ECG + Renal Function + Lever Function + Glukosa at Random</strong>
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu4==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu4==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           4. Pemeriksaan Gigi & Gusi (Dental+Gum)
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu5==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu5==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           <strong>5. Drug & Alcoholic Test 6 (six) items</strong>
           <table class="table table-borderless table-sm mt-2">
             <tr>
@@ -160,7 +163,7 @@
                 SUDAH FIT dan biayanya dibebankan<br>
                 kepada PT. Andhini Eka Karya Sejahtera
               </td>
-              <td style="width:45%;">
+              <td style="width:55%;">
                 Cocain metabolic<br>
                 Marijuana metabolic<br>
                 Morphine / Opiates<br>
@@ -175,21 +178,21 @@
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu6==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu6==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           6. HIV Test
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu7==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu7==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           7. Chemical Contamination Test
         </td>
       </tr>
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu8==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu8==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           8. Sleep Apnea Syndrome
         </td>
       </tr>
@@ -205,13 +208,17 @@
         <th>Jabatan</th>
         <th>Kapal</th>
       </tr>
+
+      <?php $no = 1; foreach ($persons as $p): ?>
       <tr>
-        <td class="center">1</td>
-        <td><?php echo $crew->nama_crew; ?></td>
-        <td><?php echo $crew->jabatan; ?></td>
-        <td><?php echo $crew->vessel; ?></td>
+        <td class="center"><?php echo $no++; ?></td>
+        <td><?php echo $p->name_person; ?></td>
+        <td><?php echo $p->rank; ?></td>
+        <td><?php echo $p->vessel_name; ?></td>
       </tr>
+      <?php endforeach; ?>
     </table>
+
 
     <p class="mt">Harap biaya dibebankan pada:</p>
 
@@ -219,22 +226,25 @@
       <tr>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu9==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu9==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           PT. Andhini Eka Karya Sejahtera
 
         </td>
         <td>
           <span class="box"
-            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($crew->mcu10==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
+            style="font-family: 'DejaVu Sans'; font-size: 16px;"><?php echo ($mcu->mcu10==1)?'✓':'&nbsp;&nbsp;&nbsp;'; ?></span>
           Crew yang bersangkutan
         </td>
       </tr>
     </table>
 
     <div class="signature">
-      <p>Hormat Kami,</p><br><br>
-      <strong>Hadjid </strong><br>
-      Ass.Crew Manager
+      <p>Hormat Kami,</p>
+      <?php if ($status_mcu == 1 || $status_mcu == 2): ?>
+      <img src="<?php echo ('./assets/imgQRCodeCrewCV/'.$signature_qr); ?>" style="height:60px;"><br>
+      <?php endif; ?>
+      <strong>Eva Marliana</strong><br>
+      Crew Manager
     </div>
 
   </div>
