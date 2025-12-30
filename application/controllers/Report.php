@@ -965,8 +965,9 @@ class Report extends CI_Controller {
 	function getDataPipelineCrew($search = "", $page = 1, $gender = "")
 	{
 		$dataContext = new DataContext();
+
 		$page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1;
-		$limit = 10;
+		$limit  = 10;
 		$offset = ($page - 1) * $limit;
 
 		$genderFilter = "";
@@ -974,38 +975,52 @@ class Report extends CI_Controller {
 			$genderFilter = " AND gender = '".$gender."' ";
 		}
 
-		$searchLower = strtolower(trim($search));
-		$filterStData = " AND st_data IN (2,3,4,7) ";
-		$statusFilter = "";
+		$search          = trim($search);
+		$searchLower     = strtolower($search);
+		$filterStData    = " AND st_data IN (2,3,4,7) ";
+		$statusFilter    = "";
 		$searchCondition = "";
 
-		
+		$isTextSearch = !empty($search) &&
+			!in_array(
+				$searchLower,
+				array(
+					'not position', 'no position', 'position',
+					'not qualified certificate', 'certificate',
+					'not qualified experience', 'experience'
+				)
+			) &&
+			strpos($searchLower, 'interview') === false &&
+			strpos($searchLower, 'not qualified') === false &&
+			strpos($searchLower, 'unfit') === false;
+
 		if (in_array($searchLower, array('not position', 'no position', 'position'))) {
 			$statusFilter = " AND st_data = 2";
-		} 
+		}
 		elseif (in_array($searchLower, array('not qualified certificate', 'certificate'))) {
 			$statusFilter = " AND (st_data = 3 AND (reason_not_qualified IS NULL OR reason_not_qualified = ''))";
-		} 
+		}
 		elseif (in_array($searchLower, array('not qualified experience', 'experience'))) {
 			$statusFilter = " AND (st_data = 3 AND reason_not_qualified != '')";
-		} 
+		}
 		elseif (strpos($searchLower, 'interview') !== false) {
 			$statusFilter = " AND st_data = 4";
 		}
 		elseif (strpos($searchLower, 'not qualified') !== false) {
 			$statusFilter = " AND (
-				(st_data = 3 AND (reason_not_qualified IS NULL OR reason_not_qualified = '')) 
-				OR (st_data = 3 AND reason_not_qualified != '')  
+				(st_data = 3 AND (reason_not_qualified IS NULL OR reason_not_qualified = ''))
+				OR (st_data = 3 AND reason_not_qualified != '')
 				OR st_data = 4
 			)";
-		} elseif (strpos($searchLower, 'unfit') !== false || strpos($searchLower, 'unfit mcu') !== false) {
+		}
+		elseif (strpos($searchLower, 'unfit') !== false) {
 			$statusFilter = " AND st_data = 7";
 		}
 		else {
 			$searchCondition = " AND (
-				position_applied LIKE '%$search%' 
-				OR fullname LIKE '%$search%' 
-				OR email LIKE '%$search%' 
+				position_applied LIKE '%$search%'
+				OR fullname LIKE '%$search%'
+				OR email LIKE '%$search%'
 				OR pengalaman_jeniskapal LIKE '%$search%'
 			)";
 		}
@@ -1014,27 +1029,47 @@ class Report extends CI_Controller {
 
 		$sqlTotal = "SELECT COUNT(*) as total FROM new_applicant $whereClause";
 		$resultTotal = $this->MCrewscv->getDataQuery($sqlTotal);
-		$totalRows = isset($resultTotal[0]) ? $resultTotal[0]->total : 0;
+		$totalRows  = isset($resultTotal[0]) ? $resultTotal[0]->total : 0;
 		$totalPages = ceil($totalRows / $limit);
-		$start = $offset + 1;
-		$end = min($offset + $limit, $totalRows);
 
-		$infoTotalData = "<tr><td colspan='20' class='text-left' style='padding: 10px; font-weight: bold;'>
-			Menampilkan data $start - $end dari total $totalRows data
-		</td></tr>";
+		$start = $offset + 1;
+		$end   = min($offset + $limit, $totalRows);
+
+		$infoTotalData = "<tr>
+			<td colspan='20' class='text-left' style='padding:10px; font-weight:bold;'>
+				Menampilkan data $start - $end dari total $totalRows data
+			</td>
+		</tr>";
+
+		if ($isTextSearch) {
+			$orderBy = "
+				ORDER BY 
+					CASE 
+						WHEN position_applied LIKE '%$search%' THEN 1
+						WHEN fullname LIKE '%$search%' THEN 2
+						WHEN pengalaman_jeniskapal LIKE '%$search%' THEN 3
+						ELSE 4
+					END,
+					submit_cv DESC
+			";
+		} else {
+			$orderBy = "
+				ORDER BY 
+					CASE 
+						WHEN st_data = 2 THEN 1 
+						WHEN st_data = 3 AND (reason_not_qualified IS NULL OR reason_not_qualified = '') THEN 2 
+						WHEN st_data = 3 AND reason_not_qualified != '' THEN 3 
+						WHEN st_data = 4 THEN 4 
+						ELSE 5
+					END ASC,
+					submit_cv DESC
+			";
+		}
 
 		$sql = "SELECT *
-			FROM new_applicant 
+			FROM new_applicant
 			$whereClause
-			ORDER BY 
-				CASE 
-					WHEN st_data = 2 THEN 1 
-					WHEN st_data = 3 AND (reason_not_qualified IS NULL OR reason_not_qualified = '') THEN 2 
-					WHEN st_data = 3 AND reason_not_qualified != '' THEN 3 
-					WHEN st_data = 4 THEN 4 
-					ELSE 5
-				END ASC,
-				submit_cv DESC
+			$orderBy
 			LIMIT $limit OFFSET $offset";
 
 		$rsl = $this->MCrewscv->getDataQuery($sql);
@@ -1121,6 +1156,7 @@ class Report extends CI_Controller {
 						</div>
 					</div>";
 			}
+			
 			$trListDataDraftCrew .= "<tr id='row_$val->id'>
 				<td class='text-center'>$no</td>
 				<td class='email'>$val->email $reasonBlock</td>
@@ -6444,39 +6480,101 @@ class Report extends CI_Controller {
 		));
 	}
 
+	// public function generatePDF_Breafing()
+	// {
+	
+	// 	$crew = new stdClass();
+	// 	$crew->idperson    = $this->input->post('idperson', true);
+	// 	$crew->nama_crew   = $this->input->post('nama_crew', true);
+	// 	$crew->jabatan     = $this->input->post('jabatan', true);
+	// 	$crew->vessel      = $this->input->post('vessel', true);
+	// 	$crew->pelabuhan   = $this->input->post('pelabuhan', true);
+	// 	$crew->no_telp     = $this->input->post('no_telp', true);
+	// 	$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
+	// 	$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
+	// 	$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
+	// 	$crew->certificates     = $this->input->post('certificates', true);
+
+	// 	$data = array(
+	// 		'crew' => $crew
+	// 	);
+
+
+	// 	require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
+
+	// 	$mpdf = new mPDF('utf-8', 'A4');
+	// 	$mpdf->SetTitle('Form Debriefing');
+
+	// 	$html = $this->load->view('frontend/form_defbreafing_pdf', $data, TRUE);
+	// 	$mpdf->WriteHTML($html);
+
+	// 	$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
+
+	// 	$mpdf->Output($filename, 'I');
+	// 	exit;
+	// }
 	public function generatePDF_Breafing()
 	{
-	
-		$crew = new stdClass();
-		$crew->idperson    = $this->input->post('idperson', true);
-		$crew->nama_crew   = $this->input->post('nama_crew', true);
-		$crew->jabatan     = $this->input->post('jabatan', true);
-		$crew->vessel      = $this->input->post('vessel', true);
-		$crew->pelabuhan   = $this->input->post('pelabuhan', true);
-		$crew->no_telp     = $this->input->post('no_telp', true);
-		$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
-		$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
-		$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
-		$crew->certificates     = $this->input->post('certificates', true);
+		
+			$crew = new stdClass();
+			$crew->idperson    = $this->input->post('idperson', true);
+			$crew->nama_crew   = $this->input->post('nama_crew', true);
+			$crew->jabatan     = $this->input->post('jabatan', true);
+			$crew->vessel      = $this->input->post('vessel', true);
+			$crew->pelabuhan   = $this->input->post('pelabuhan', true);
+			$crew->no_telp     = $this->input->post('no_telp', true);
+			$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
+			$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
+			$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
+			$crew->certificates = $this->input->post('certificates', true);
+			$crew->remask_form_deb = $this->input->post('remask_form_deb', true);
+			
+			$answers = new stdClass();
+			$answers_input = $this->input->post('answers', true);
+			
+			// Decode JSON string
+			if (!empty($answers_input)) {
+					$answers_array = json_decode($answers_input, true);
+					
+					if (json_last_error() === JSON_ERROR_NONE && is_array($answers_array)) {
+							foreach ($answers_array as $key => $value) {
+									$answers->$key = $value;
+							}
+					} else {
+							error_log("JSON decode error: " . json_last_error_msg());
+					}
+			}
+			
+			for ($i = 1; $i <= 9; $i++) {
+					$key = 'answer_' . $i;
+					if (!isset($answers->$key) || $answers->$key === null) {
+							$answers->$key = '';
+					}
+			}
 
-		$data = array(
-			'crew' => $crew
-		);
+			$data = array(
+					'crew' => $crew,
+					'answers' => $answers
+			);
 
+			// echo "<pre>";
+			// print_r($data);
+			// echo "</pre>";
+			// exit;
 
-		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
+			require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 
-		$mpdf = new mPDF('utf-8', 'A4');
-		$mpdf->SetTitle('Form Debriefing');
+			$mpdf = new mPDF('utf-8', 'A4');
+			$mpdf->SetTitle('Form Debriefing');
 
-		$html = $this->load->view('frontend/form_defbreafing_pdf', $data, TRUE);
-		$mpdf->WriteHTML($html);
+			$html = $this->load->view('frontend/form_defbreafing_pdf', $data, TRUE);
+			$mpdf->WriteHTML($html);
 
-		$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
-
-		$mpdf->Output($filename, 'I');
-		exit;
+			$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
+			$mpdf->Output($filename, 'D');
 	}
+
+
 
 	// /* Form MCU Start */
 	public function generatePDF_MCU()
@@ -6867,7 +6965,7 @@ class Report extends CI_Controller {
 			$idEnc = base64_encode(base64_encode(base64_encode($idReport)));
 			$link  = base_url("report/print_approve_mcu/$idEnc");
 
-			$cmEmail = "helmi.tazkia@andhika.com";
+			$cmEmail = "belva.agustin@andhika.com";
 			$this->sendEmailMCU($cmEmail, $header, $persons, $link);
 	}
 
@@ -7145,7 +7243,7 @@ class Report extends CI_Controller {
 					$mail->addAddress($clinicEmail);
 					
 					// Optional: CC ke Crew Manager juga
-					$mail->addCC('helmi.tazkia@andhika.com', 'Crew Manager');
+					$mail->addCC('belva.agustin@andhika.com', 'Crew Manager');
 					
 					$mail->isHTML(true);
 					$mail->Subject = 'Approval Medical Check Up (MCU) - ' . $header->clinic_name;

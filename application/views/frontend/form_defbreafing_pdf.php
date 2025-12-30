@@ -241,7 +241,7 @@
             <div class="section-title">
                 Certificates and documents yang harus diperbaharui atau dilengkapi :
             </div>
-            <div class="remarks-box" style="padding-left:4px;"><?php echo$crew->certificates ?></div>
+            <div class="remarks-box" style="padding-left:4px;"><?php echo $crew->certificates ?></div>
 
             <!-- PERTANYAAN 5–9 -->
             <table class="question-table">
@@ -254,19 +254,19 @@
                 <tr>
                     <td align="center">1</td>
                     <td>Apa rencana kegiatan anda selama masa cuti?</td>
-                    <td class="answer-box"></td>
+                    <td class="answer-box"><?php echo $answers->answer_1 ?></td>
                 </tr>
 
                 <tr>
                     <td align="center">2</td>
                     <td>Penerapan K3 di kapal?</td>
-                    <td class="answer-box"></td>
+                    <td class="answer-box"><?php echo $answers->answer_2 ?></td>
                 </tr>
 
                 <tr>
                     <td align="center">3</td>
                     <td>Training crew apa saja?</td>
-                    <td class="answer-box"></td>
+                    <td class="answer-box"><?php echo $answers->answer_3 ?></td>
                 </tr>
 
                 <tr>
@@ -277,12 +277,12 @@
                         <strong>Masalah :</strong><br><br>
                         <strong>Penyelesaian :</strong>
                     </td>
-                    <td class="answer-box"></td>
+                    <td class="answer-box"><?php echo $answers->answer_4 ?></td>
                 </tr>
                  <tr>
                     <td align="center">5</td>
                     <td>Bagaimana kondisi kerja tim di kapal?</td>
-                    <td class="answer-box big"></td>
+                    <td class="answer-box big"><?php echo $answers->answer_5 ?></td>
                 </tr>
             </table>
 
@@ -324,25 +324,25 @@
                 <tr>
                     <td align="center">6</td>
                     <td>Kebersihan di atas kapal?</td>
-                    <td class="answer-box big"></td>
+                    <td class="answer-box big"><?php echo $answers->answer_6 ?></td>
                 </tr>
 
                 <tr>
                     <td align="center">7</td>
                     <td>Makanan di atas kapal?</td>
-                    <td class="answer-box big"></td>
+                    <td class="answer-box big"><?php echo $answers->answer_7 ?></td>
                 </tr>
 
                 <tr>
                     <td align="center">8</td>
                     <td>Kondisi kesehatan setelah sign off?</td>
-                    <td class="answer-box big"></td>
+                    <td class="answer-box big"><?php echo $answers->answer_8 ?></td>
                 </tr>
 
                 <tr>
                     <td align="center">9</td>
                     <td>Harapan dan saran?</td>
-                    <td class="answer-box big"></td>
+                    <td class="answer-box big"><?php echo $answers->answer_9 ?></td>
                 </tr>
             </table>
 
@@ -351,7 +351,7 @@
                 Remarks / Comment :
                 <br><em>*diisi oleh crew executive</em>
             </div>
-            <div class="remarks-box"></div>
+            <div class="remarks-box"><?php echo $crew->remask_form_deb ?></div>
 
             <!-- SIGN -->
             <table class="info-table" style="margin-top:15px;">

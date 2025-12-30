@@ -4062,6 +4062,26 @@
                 return;
             }
 
+            let answers = {};
+
+            // Loop untuk mengambil data dari form-deb-answer_1 sampai form-deb-answer_9
+            for (let i = 1; i <= 9; i++) {
+                let elementId = 'form-deb-answer_' + i;
+                let $element = $("#" + elementId);
+                
+                if ($element.length) {
+                    // Ambil value atau text berdasarkan tipe elemen
+                    answers['answer_' + i] = $element.val() || $element.text() || "";
+                } else {
+                    answers['answer_' + i] = "";
+                }
+            }
+
+
+            remask_form_deb = $("#form-deb-remaks-box").val();
+
+
+
             // Ambil data dari tampilan (pakai .text())
             const data = {
                 idperson: idperson,
@@ -4073,10 +4093,14 @@
                 tgl_join   : $("#val-tgljoin-defbreafing").val(),
                 tgl_signoff: $("#val-tglsignoff-defbreafing").val(),
                 siap_join  : $("#val-siapjoin-defbreafing").val(),
-                certificates: $("#certificates-input-document").val()
+                certificates: $("#certificates-input-document").val(),
+                answers: JSON.stringify(answers),
+                remask_form_deb: remask_form_deb
+
             };
 
-            console.log("Data dikirim ke server:", data);
+            // console.log("Data dikirim ke server:", data);
+            // return false;
 
             submitPostData_Breafing(data);
         }
@@ -10089,20 +10113,20 @@
                                 <tr>
                                     <td align="center">1</td>
                                     <td>Apa rencana kegiatan anda selama masa cuti?</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_1" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
                                     <td align="center">2</td>
                                     <td>Seperti apa dan bagaimana penerapan kesehatan, keselamatan dan keamanan kerja di
                                         kapal?</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_2" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
                                     <td align="center">3</td>
                                     <td>Training crew apa saja yang dilakukan di kapal?</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_3" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
@@ -10113,36 +10137,36 @@
                                         <strong>Masalah :</strong><br><br>
                                         <strong>Penyelesaian :</strong>
                                     </td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_4" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
                                 <tr>
                                     <td align="center">5</td>
                                     <td>Bagaimana kondisi kerja tim di kapal?</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_5" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
                                     <td align="center">6</td>
                                     <td>Berikan tanggapan anda mengenai kebersihan di atas kapal.</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_6" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
                                     <td align="center">7</td>
                                     <td>Berikan tanggapan anda mengenai makanan di atas kapal.</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_7" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
                                     <td align="center">8</td>
                                     <td>Bagaimana kondisi kesehatan anda saat ini / setelah sign off?</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_8" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
 
                                 <tr>
                                     <td align="center">9</td>
                                     <td>Sebutkan harapan dan saran anda.</td>
-                                    <td class="answer-box"></td>
+                                    <td class="answer-box"><textarea  type="text" id="form-deb-answer_9" style="width: 100%;height: 70px;"></textarea></td>
                                 </tr>
                             </table>
 
@@ -10151,7 +10175,7 @@
                                 Remarks / Comment :
                                 <br><em>*diisi oleh crew executive</em>
                             </div>
-                            <div class="remarks-box"></div>
+                            <div class="remarks-box"><textarea  type="text" id="form-deb-remaks-box" style="width: 100%;height: 70px;"></textarea></div>
 
                             <!-- TANDA TANGAN -->
                             <table class="info-table" style="margin-top:15px;">
@@ -10452,7 +10476,7 @@
                 <table class="table table-borderless table-sm mt-2">
                   <tr>
                     <td class="fw-bold ps-4" style="width:55%;">
-                      Pemeriksaan no. 5, 6 dilakukan JIKA<br>
+                      Pemeriksaan no. 5,6,7,8 dilakukan JIKA<br>
                       SUDAH FIT dan biayanya dibebankan<br>
                       kepada PT. Andhini Eka Karya Sejahtera
                     </td>
