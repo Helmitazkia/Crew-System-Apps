@@ -322,10 +322,12 @@ class Report extends CI_Controller {
 
 			$crewName = $val->seafarer_name ?: "-";
 			$rank     = $val->rank ?: "-";
+			$vessel   = $val->vessel ?: "-";
 
+			$period  = ($val->date_of_report) ? date("d M Y", strtotime($val->date_of_report)) : "-";
 			$signIn  = ($val->reporting_period_from) ? date("d M Y", strtotime($val->reporting_period_from)) : "-";
 			$signOut = ($val->reporting_period_to) ? date("d M Y", strtotime($val->reporting_period_to)) : "-";
-			$period  = ($val->date_of_report) ? date("d M Y", strtotime($val->date_of_report)) : "-";
+			
 
 			$chief  = $fn($val->st_submit_chief, $val->st_submitDate_chief, "Chief");
 			$master = $fn($val->st_submit_master, $val->st_submitDate_master, "Master");
@@ -337,9 +339,11 @@ class Report extends CI_Controller {
 				$trNya .= "<td style='font-size:11px;text-align:center;'>{$no}</td>";
 				$trNya .= "<td style='font-size:11px;text-align:left;'>{$crewName}</td>";
 				$trNya .= "<td style='font-size:11px;text-align:center;'>{$rank}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$vessel}</td>";
+				$trNya .= "<td style='font-size:11px;text-align:center;'>{$period}</td>";
 				$trNya .= "<td style='font-size:11px;text-align:center;'>{$signIn}</td>";
 				$trNya .= "<td style='font-size:11px;text-align:center;'>{$signOut}</td>";
-				$trNya .= "<td style='font-size:11px;text-align:center;'>{$period}</td>";
+			
 
 				$trNya .= "<td style='font-size:11px;text-align:center;'>{$chief}</td>";
 				$trNya .= "<td style='font-size:11px;text-align:center;'>{$master}</td>";
@@ -811,6 +815,7 @@ class Report extends CI_Controller {
 	function getQualifiedCrew($search = "", $page = 1, $orderNya = "", $sortBy = "", $sortOrder = "")
 	{
 		$dataContext = new DataContext();
+		$interviewLink = base_url('crew/getLoginCrew');
 		$page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1;
 		$limit = 10;
 		$offset = ($page - 1) * $limit;
@@ -843,7 +848,6 @@ class Report extends CI_Controller {
 
 		$order = "ORDER BY submit_cv DESC";
 		
-		// Handle sorting jika parameter sort ada
 		if (!empty($sortBy) && !empty($sortOrder)) {
 			$allowedColumns = array(
 				'email', 'fullname', 'born_place', 'born_date', 'handphone', 
@@ -884,9 +888,19 @@ class Report extends CI_Controller {
 				<i class='fa fa-file-pdf-o'></i> View CV
 			</button>";
 
-			$btnAct .= "<button class=\"btn btn-success btn-xs btn-block\" style=\"margin-top:5px;\" onclick=\"interviewCrewQualify('".$val->id."', '<b><i>:: ".$val->fullname." ::</i></b>');\">
+			
+
+			$btnAct .= "
+			<button 
+				class=\"btn btn-success btn-xs btn-block\" 
+				style=\"margin-top:5px;\"
+				data-id=\"{$val->id}\"
+				data-name=\":: {$val->fullname} ::\"
+				data-link=\"{$interviewLink}\"
+				onclick=\"interviewCrewQualify(this)\">
 				<i class=\"fas fa-user-check\"></i> Qualify
 			</button>";
+
 
 			$btnAct .= "<button class=\"btn btn-warning btn-xs btn-block\" 
 							style=\"margin-top:5px;\"
@@ -6585,6 +6599,9 @@ class Report extends CI_Controller {
 			$clinic_name = $this->input->post('clinic_name', TRUE);
 			$status_mcu = $this->input->post('status_mcu', TRUE);
 			$signature_qr = $this->input->post('signature_qr', TRUE);
+			$address_clinic = $this->input->post('address_clinic', TRUE);
+			$telp = $this->input->post('telp', TRUE);
+			$fax = $this->input->post('fax', TRUE);
 
 			if (empty($personsJson) || empty($mcu)) {
 					echo "Data MCU tidak lengkap";
@@ -6613,6 +6630,9 @@ class Report extends CI_Controller {
 					'mcu'     => $mcuObj,
 					'date_mcu'=> $date_mcu,
 					'clinic_name'=> $clinic_name,
+					'address_clinic'=> $address_clinic,
+					'telp'=> $telp,
+					'fax'=> $fax,
 					'status_mcu'=> $status_mcu,
 					'signature_qr'=> $signature_qr
 					
@@ -6874,6 +6894,9 @@ class Report extends CI_Controller {
 					SELECT 
 							a.id AS id_report,
 							b.clinic_name,
+							b.address_clinic,
+							b.telp,
+							b.fax,
 							a.date_mcu,
 							c.answer_1,
 							c.answer_2,
@@ -6965,7 +6988,7 @@ class Report extends CI_Controller {
 			$idEnc = base64_encode(base64_encode(base64_encode($idReport)));
 			$link  = base_url("report/print_approve_mcu/$idEnc");
 
-			$cmEmail = "belva.agustin@andhika.com";
+			$cmEmail = "helmi.tazkia@andhika.com";
 			$this->sendEmailMCU($cmEmail, $header, $persons, $link);
 	}
 
@@ -7086,6 +7109,9 @@ class Report extends CI_Controller {
 						SELECT 
 								a.id AS id_report,
 								b.clinic_name,
+								b.address_clinic,
+								b.telp,
+								b.fax,
 								a.date_mcu,
 								c.answer_1,
 								c.answer_2,
@@ -7139,6 +7165,9 @@ class Report extends CI_Controller {
 	
 				$data = array(
 						'clinic_name' => $report->clinic_name,
+						'address_clinic' => $report->address_clinic,
+						'telp'        => $report->telp,
+						'fax'         => $report->fax,
 						'date_mcu'    => $report->date_mcu,
 						'mcu'         => $mcu,
 						'persons'     => $persons,
@@ -7189,15 +7218,17 @@ class Report extends CI_Controller {
 				$this->db->update('report_mcu', $update);
 				
 				// 4. KIRIM EMAIL KE KLINIK JIKA ADA EMAILNYA
+				$idEnc = base64_encode(base64_encode(base64_encode($idReport)));
+				$link  = base_url("report/print_approve_mcu/$idEnc");
 				if ($klinik && !empty($klinik->email)) {
-						$this->sendEmailToClinic($idReport, $klinik->email);
+						$this->sendEmailToClinic($idReport, $klinik->email,$link);
 				}
 				
 				redirect('report/print_approve_mcu/'.$hashId);
 		}
 
 
-	private function sendEmailToClinic($idReport, $clinicEmail)
+	private function sendEmailToClinic($idReport, $clinicEmail,$link)
 	{
 			require_once APPPATH . 'third_party/PHPMailer/PHPMailer/class.phpmailer.php';
 			require_once APPPATH . 'third_party/PHPMailer/PHPMailer/class.smtp.php';
@@ -7243,7 +7274,7 @@ class Report extends CI_Controller {
 					$mail->addAddress($clinicEmail);
 					
 					// Optional: CC ke Crew Manager juga
-					$mail->addCC('belva.agustin@andhika.com', 'Crew Manager');
+					$mail->addCC('helmi.tazkia@andhika.com', 'Crew Manager');
 					
 					$mail->isHTML(true);
 					$mail->Subject = 'Approval Medical Check Up (MCU) - ' . $header->clinic_name;
@@ -7289,7 +7320,11 @@ class Report extends CI_Controller {
 									
 									<p><strong>Daftar Crew yang akan melakukan MCU:</strong></p>
 									$crewHtml
-									
+
+									<p>
+											<strong>Preview / Print MCU:</strong><br>
+											<a href='$link'>Klik di sini</a>
+									</p>
 									<p>Mohon MCU dapat dilaksanakan sesuai prosedur. Biaya akan dibebankan kepada perusahaan 
 									sebagaimana kesepakatan sebelumnya.</p>
 									

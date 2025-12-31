@@ -66,19 +66,21 @@
 
   <style>
     .header-section {
-  background: #0d6efd; /* Biru Bootstrap */
-  color: #fff;
-  padding: 12px 20px;
-  margin-bottom: 15px;
-}
+      background: #009999;
+      color: #fff;
+      padding: 60px 20px;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 
 <body>
-    <section class="header-section">
 
-    </section>
-  <div class="card">
+  <section class="header-section">
+
+  </section>
+
+  <div class="card" style="  margin-top: -80px; ">
 
     <!-- HEADER -->
     <table width="100%" cellpadding="5" cellspacing="0" style="font-family:'Times New Roman';">
@@ -115,13 +117,12 @@
     <!-- TUJUAN -->
     <table class="mt">
       <tr>
-        <td>
+        <td style="width:400px;">
           Kepada Yth:<br>
           <?php echo $clinic_name; ?><br>
-          Jl. Cilincing Raya No. 74<br>
-          Tanjung Priok - Jakarta Utara<br>
-          Telp: (021) 4411281<br>
-          Fax: (021) 44830763
+          <?php echo $address_clinic; ?><br>
+          Telp: <?php echo $telp; ?><br>
+          Fax: <?php echo $fax; ?>
         </td>
         <td class="right">
           Jakarta, <?php echo date('d M Y', strtotime($date_mcu)); ?>
@@ -422,6 +423,9 @@
     let clicnic_name = report.clinic_name;
     let status_mcu = report.status_mcu;
     let signature_qr = report.signature_qr;
+    let address_clinic = report.address_clinic;
+    let telp = report.telp;
+    let fax = report.fax;
 
     if (persons.length === 0) {
       alert("Data crew kosong");
@@ -441,7 +445,10 @@
       date_mcu: date_mcu,
       clinic_name: clicnic_name,
       status_mcu: status_mcu,
-      signature_qr: signature_qr
+      signature_qr: signature_qr,
+      address_clinic: address_clinic,
+      telp: telp,
+      fax: fax
     };
 
     // console.log("POST PDF MCU (ALL CREW):", postData);

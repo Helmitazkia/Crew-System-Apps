@@ -43,7 +43,8 @@ class Personal extends CI_Controller {
 			}
 			else if($typeSearch == "name")
 			{
-				$whereNya .= " AND CONCAT(A.fname,' ',A.mname,' ',A.lname) LIKE '%".$txtSearch."%' ";
+				$whereNya .= " AND (A.fname LIKE '%".$txtSearch."%' OR A.mname LIKE '%".$txtSearch."%'  OR A.lname LIKE '%".$txtSearch."%' )";
+				var_dump($whereNya);exit;
 			}
 			else if($typeSearch == "age")
 			{
@@ -87,13 +88,90 @@ class Personal extends CI_Controller {
 			}
 		}
 
-		$sql = "SELECT A.idperson,TRIM(CONCAT(A.fname,' ',A.mname,' ' ,A.lname)) AS fullName,A.applyfor,A.gender,A.religion,A.dob,CASE WHEN A.inAktif='0' THEN 'Aktif' WHEN A.inAktif='1' THEN 'Non Aktif' END AS inAktif,CASE WHEN A.lower_rank = 0 THEN 'No' WHEN A.lower_rank = 1 THEN 'Yes' END AS lowerrank,A.inBlacklist,B.NmKota,A.newapplicent
-				FROM mstpersonal A
-				LEFT JOIN tblkota B ON A.pob = B.KdKota
-				".$dbSeaExp."
-				".$whereNya."
-				GROUP BY A.idperson
-				ORDER BY fullName ASC ".$limitNya;
+		// $sql = "SELECT A.idperson,TRIM(CONCAT(A.fname,' ',A.mname,' ' ,A.lname)) AS fullName,A.applyfor,A.gender,A.religion,A.dob,CASE WHEN A.inAktif='0' THEN 'Aktif' WHEN A.inAktif='1' THEN 'Non Aktif' END AS inAktif,CASE WHEN A.lower_rank = 0 THEN 'No' WHEN A.lower_rank = 1 THEN 'Yes' END AS lowerrank,A.inBlacklist,B.NmKota,A.newapplicent,
+		// 				A.addusrdt,
+		// 				A.updusrdt,
+		// 				A.delusrdt
+		// 		FROM mstpersonal A
+		// 		LEFT JOIN tblkota B ON A.pob = B.KdKota
+		// 		".$dbSeaExp."
+		// 		".$whereNya."
+		// 		GROUP BY A.idperson
+		// 		ORDER BY fullName ASC ".$limitNya;
+
+		// $rsl = $this->MCrewscv->getDataQuery($sql);
+
+
+		$sql = "
+			SELECT 
+					A.idperson,
+					TRIM(CONCAT(A.fname,' ',A.mname,' ',A.lname)) AS fullName,
+					A.applyfor,
+					A.gender,
+					A.religion,
+					A.dob,
+
+					CASE 
+							WHEN A.inAktif = '0' THEN 'Aktif'
+							WHEN A.inAktif = '1' THEN 'Non Aktif'
+					END AS inAktif,
+
+					CASE 
+							WHEN A.lower_rank = 0 THEN 'No'
+							WHEN A.lower_rank = 1 THEN 'Yes'
+					END AS lowerrank,
+
+					A.inBlacklist,
+					B.NmKota,
+					A.newapplicent,
+
+					A.addusrdt,
+					A.updusrdt,
+					A.delusrdt,
+
+					/* ===== UPDATE INFO (pakai updusrdt, fallback ke addusrdt) ===== */
+					L.userFullNm AS updateBy,
+
+					SUBSTRING_INDEX(
+							COALESCE(NULLIF(A.updusrdt, ''), A.addusrdt),
+							'/',
+							1
+					) AS updateUser,
+
+					SUBSTRING_INDEX(
+							SUBSTRING_INDEX(
+									COALESCE(NULLIF(A.updusrdt, ''), A.addusrdt),
+									'/',
+									2
+							),
+							'/',
+							-1
+					) AS updateDate,
+
+					SUBSTRING_INDEX(
+							COALESCE(NULLIF(A.updusrdt, ''), A.addusrdt),
+							'/',
+							-1
+					) AS updateTime
+
+			FROM mstpersonal A
+			LEFT JOIN tblkota B 
+					ON A.pob = B.KdKota
+
+			LEFT JOIN login L
+					ON L.userInit = SUBSTRING_INDEX(
+							COALESCE(NULLIF(A.updusrdt, ''), A.addusrdt),
+							'/',
+							1
+					)
+
+			".$dbSeaExp."
+			".$whereNya."
+			GROUP BY A.idperson
+			ORDER BY fullName ASC ".$limitNya;
+
+		// var_dump($whereNya);
+		// var_dump($sql); die;
 
 		$rsl = $this->MCrewscv->getDataQuery($sql);
 
@@ -136,9 +214,19 @@ class Personal extends CI_Controller {
 					$bgColor = "background-color:#5CB85C;";
 				}
 
+				$warning = '';
+					if (!empty($val->updateDate)) {
+							$warning = "<br>
+							<span style=\"font-size:10px;color:orange;font-weight:bold;\">
+									Last Update By ".$val->updateBy."
+									(".$val->updateDate." ".$val->updateTime.")
+							</span>";
+					}
+
+
 				$trNya .= "<tr>";
 					$trNya .= "<td align=\"center\" style=\"font-size:11.5px;".$bgColor."\">".$no."</td>";
-					$trNya .= "<td style=\"font-size:11.5px;\">(".$val->idperson.") ".$val->fullName."</td>";
+					$trNya .= "<td style=\"font-size:11.5px;\">(".$val->idperson.") ".$val->fullName."&nbsp".$warning."</td>";
 					$trNya .= "<td style=\"font-size:11.5px;\">".strtoupper($val->applyfor)."</td>";
 					$trNya .= "<td style=\"font-size:11.5px;\" align=\"center\">".$val->gender."</td>";
 					$trNya .= "<td style=\"font-size:11.5px;\" align=\"center\">".$val->religion."</td>";
@@ -276,6 +364,7 @@ class Personal extends CI_Controller {
 									"txtLname" => preg_replace('/\s+/', ' ', trim($rsl[0]->lname)),
 									"slcCountryNational" => $rsl[0]->nationalid,
 									"slcCountryOrigin" => $rsl[0]->ctryOfOrgn,
+									"txtSeafarerCode" => $rsl[0]->kodepelaut,
 									"txtDate_DOB" => $rsl[0]->dob,
 									"slcCityBirth" => $rsl[0]->pob,
 									"slcMaritalStatus" => $rsl[0]->maritalstsid,
@@ -1110,7 +1199,7 @@ class Personal extends CI_Controller {
 			}
 			else if($typeSearch == "name")
 			{
-				$whereNya .= " AND CONCAT(A.fname,' ',A.mname,' ',A.lname) LIKE '%".$txtSearch."%' ";
+				$whereNya .= " AND (A.fname LIKE '%".$txtSearch."%' OR A.mname LIKE '%".$txtSearch."%'  OR A.lname LIKE '%".$txtSearch."%' )";
 			}
 			else if($typeSearch == "age")
 			{
@@ -1203,7 +1292,7 @@ class Personal extends CI_Controller {
 			}
 			else if($typeSearch == "name")
 			{
-				$whereNya .= " AND CONCAT(A.fname,' ',A.mname,' ',A.lname) LIKE '%".$txtSearch."%' ";
+				$whereNya .= " AND (A.fname LIKE '%".$txtSearch."%' OR A.mname LIKE '%".$txtSearch."%'  OR A.lname LIKE '%".$txtSearch."%' )";
 			}
 			else if($typeSearch == "age")
 			{
@@ -1293,7 +1382,7 @@ class Personal extends CI_Controller {
 			}
 			else if($typeSearch == "name")
 			{
-				$whereNya .= " AND CONCAT(A.fname,' ',A.mname,' ',A.lname) LIKE '%".$txtSearch."%' ";
+				$whereNya .= " AND (A.fname LIKE '%".$txtSearch."%' OR A.mname LIKE '%".$txtSearch."%'  OR A.lname LIKE '%".$txtSearch."%' )";
 			}
 			else if($typeSearch == "age")
 			{
@@ -1382,7 +1471,7 @@ class Personal extends CI_Controller {
 			}
 			else if($typeSearch == "name")
 			{
-				$whereNya .= " AND CONCAT(A.fname,' ',A.mname,' ',A.lname) LIKE '%".$txtSearch."%' ";
+				$whereNya .= " AND (A.fname LIKE '%".$txtSearch."%' OR A.mname LIKE '%".$txtSearch."%'  OR A.lname LIKE '%".$txtSearch."%' )";
 			}
 			else if($typeSearch == "age")
 			{

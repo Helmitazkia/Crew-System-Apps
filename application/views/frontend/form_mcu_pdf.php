@@ -103,13 +103,12 @@
     <!-- TUJUAN -->
     <table class="mt">
       <tr>
-        <td>
+        <td style="width:380px;">
           Kepada Yth:<br>
           <?php echo $clinic_name; ?><br>
-          Jl. Cilincing Raya No. 74<br>
-          Tanjung Priok - Jakarta Utara<br>
-          Telp: (021) 4411281<br>
-          Fax: (021) 44830763
+          <?php echo $address_clinic; ?><br>
+          Telp: <?php echo $telp; ?><br>
+          Fax: <?php echo $fax; ?>
         </td>
         <td class="right">
           Jakarta, <?php echo date('d M Y', strtotime($date_mcu)); ?>
