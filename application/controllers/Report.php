@@ -664,6 +664,49 @@ class Report extends CI_Controller {
 		}
 	}
 
+	function viewCv($id)
+	{
+		if (!$this->session->userdata('idUserCrewSystem')) {
+			show_404();
+		}
+
+		$id = intval($id);
+		if ($id <= 0) {
+			show_404();
+		}
+
+		$sql = "
+			SELECT new_cv 
+			FROM new_applicant 
+			WHERE id = '$id'
+			AND deletests = '0'
+			LIMIT 1
+		";
+		$res = $this->MCrewscv->getDataQuery($sql);
+
+		if (empty($res) || empty($res[0]->new_cv)) {
+			show_404();
+		}
+
+		$fileName = $res[0]->new_cv;
+		$path = FCPATH . 'assets/uploads/CV_NewApplicant/' . $fileName;
+
+		if (!file_exists($path)) {
+			show_404();
+		}
+
+		header('Content-Type: application/pdf');
+		header('Content-Disposition: inline; filename="'.$fileName.'"');
+		header('Content-Length: ' . filesize($path));
+		header('X-Content-Type-Options: nosniff');
+		header('X-Robots-Tag: noindex, nofollow', true);
+
+		readfile($path);
+		exit;
+	}
+
+
+
 	function getDataNewApplicent($search = "", $page = 1)
 	{
 		$dataContext = new DataContext();
@@ -729,10 +772,13 @@ class Report extends CI_Controller {
 
 		foreach ($rsl as $val)
 		{ 
-			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
-			$btnAct = "<button class=\"btn btn-xs btn-block btn-primary\" onclick=\"window.open('$cvUrl', '_blank');\">
+			$cvUrl = site_url('report/viewCv/'.$val->id);
+
+			$btnAct = "<button class='btn btn-primary btn-xs btn-block'
+				onclick=\"window.open('$cvUrl','_blank')\">
 				<i class='fa fa-file-pdf-o'></i> View CV
 			</button>";
+
 
 			$btnAct .= "<button class=\"btn btn-warning btn-xs btn-block\" 
 							style=\"margin-top:5px;\"
@@ -882,13 +928,12 @@ class Report extends CI_Controller {
 
 		foreach ($rsl as $val)
 		{ 
-			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
+			$cvUrl = site_url('report/viewCv/'.$val->id);
 
-			$btnAct = "<button class=\"btn btn-xs btn-block btn-primary\" onclick=\"window.open('$cvUrl', '_blank');\">
+			$btnAct = "<button class='btn btn-primary btn-xs btn-block'
+				onclick=\"window.open('$cvUrl','_blank')\">
 				<i class='fa fa-file-pdf-o'></i> View CV
 			</button>";
-
-			
 
 			$btnAct .= "
 			<button 
@@ -1091,11 +1136,13 @@ class Report extends CI_Controller {
 		$no = $offset + 1;
 
 		foreach ($rsl as $val) {
-			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
+			$cvUrl = site_url('report/viewCv/'.$val->id);
 
-			$btnAct = "<button class=\"btn btn-sm btn-block btn-primary\" onclick=\"window.open('$cvUrl', '_blank');\">
+			$btnAct = "<button class='btn btn-primary btn-xs btn-block'
+				onclick=\"window.open('$cvUrl','_blank')\">
 				<i class='fa fa-file-pdf-o'></i> View CV
 			</button>";
+
 
 			if ($val->st_data == 2) {
 				$statusText = "No Position";
@@ -1265,10 +1312,13 @@ class Report extends CI_Controller {
 
 		foreach ($rsl as $val)
 		{
-			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
-			$btnAct = "<button class=\"btn btn-block btn-sm btn-primary\" onclick=\"window.open('$cvUrl', '_blank');\">
+			$cvUrl = site_url('report/viewCv/'.$val->id);
+
+			$btnAct = "<button class='btn btn-primary btn-xs btn-block'
+				onclick=\"window.open('$cvUrl','_blank')\">
 				<i class='fa fa-file-pdf-o'></i> View CV
 			</button>";
+
 			
 			$btnAct .= "<button class=\"btn btn-success btn-xs btn-block\" style=\"margin-top:5px;\" onclick=\"pickUpDataApplicant('".$val->id."');\"><i class=\"fas fa-user-check\"></i> Qualified</button>";
 			
@@ -1364,11 +1414,13 @@ class Report extends CI_Controller {
 
 		foreach ($rsl as $val)
 		{ 
-			$cvUrl = base_url('assets/uploads/CV_NewApplicant/' . $val->new_cv);
+			$cvUrl = site_url('report/viewCv/'.$val->id);
 
-			$btnAct = "<button class=\"btn btn-block btn-sm btn-primary\" onclick=\"window.open('$cvUrl', '_blank');\">
+			$btnAct = "<button class='btn btn-primary btn-xs btn-block'
+				onclick=\"window.open('$cvUrl','_blank')\">
 				<i class='fa fa-file-pdf-o'></i> View CV
 			</button>";
+
 
 			if (!empty($val->mcu_file)) {
 				$uploadTime = date('d M Y H:i', strtotime($val->mcu_uploaded_at));
@@ -2598,142 +2650,150 @@ class Report extends CI_Controller {
 		}
 	}
 
-	function setInterviewCrewQualify() 
+	function setInterviewCrewQualify()
 	{
 		$id = $this->input->post('id');
 
-		if ($id) {
+		if (!$id) {
+			echo json_encode(array('status' => 'error', 'message' => 'ID tidak valid'));
+			return;
+		}
 
-			$sqlCheck = "SELECT * FROM new_applicant WHERE id = '".$id."' AND deletests = '0'";
-			$data = $this->MCrewscv->getDataQuery($sqlCheck);
+		$applicantData = $this->MCrewscv->getDataQuery(
+			"SELECT * FROM new_applicant WHERE id = '".$id."' AND deletests = '0' LIMIT 1"
+		);
 
-			if (!empty($data)) {
+		if (empty($applicantData)) {
+			echo json_encode(array('status' => 'error', 'message' => 'Data tidak ditemukan'));
+			return;
+		}
 
-				$app = $data[0];
+		$app = $applicantData[0];
 
-				$parts = explode(' ', trim($app->fullname));
-				$fname  = $parts[0];
-				$dob    = $app->born_date;
+		$username = '';
+		$password = '';
 
-				$checkSql = "
-					SELECT * FROM mstpersonal 
-					WHERE deletests = 0
-					AND (
-							mobileno = '".$app->handphone."'
-						OR (fname LIKE '".$fname."%' AND dob = '".$dob."')
-						OR email = '".$app->email."'
-					)
-					LIMIT 1
-				";
+		$parts = explode(' ', trim($app->fullname));
+		$fname = $parts[0];
+		$dob   = $app->born_date;
 
-				$exist = $this->MCrewscv->getDataQuery($checkSql);
+		$existPersonal = $this->MCrewscv->getDataQuery("
+			SELECT * FROM mstpersonal
+			WHERE deletests = 0
+			AND (
+				mobileno = '".$app->handphone."'
+				OR (fname LIKE '".$fname."%' AND dob = '".$dob."')
+				OR email = '".$app->email."'
+			)
+			LIMIT 1
+		");
 
-				if (!empty($exist)) {
+		if (!empty($existPersonal)) {
 
-					$idPerson = $exist[0]->idperson;
+			$idPerson = $existPersonal[0]->idperson;
 
-					$loginSql = "SELECT * FROM crew_login WHERE idperson = '".$idPerson."' AND sts_delete = 0";
-					$loginCheck = $this->MCrewscv->getDataQuery($loginSql);
+		} else {
 
-					if (empty($loginCheck)) {
-						$username = $this->generateUniqueUsername($app->fullname);
-						$password = $username;
+			$last = $this->MCrewscv->getDataQuery(
+				"SELECT idperson FROM mstpersonal ORDER BY idperson DESC LIMIT 1"
+			);
 
-						$loginData = array(
-							'idperson'   => $idPerson,
-							'fullname'   => $app->fullname,
-							'username'   => $username,
-							'password'   => md5(strtolower($password)),
-							'AddUsrDt'   => $this->session->userdata('userCrewSystem') . "/" . date('Ymd')."/".date('H:i:s'),
-							'sts_delete' => 0
-						);
-
-						$this->MCrewscv->insData('crew_login', $loginData);
-					}
-
-					$this->db->where('id', $id);
-					$this->db->update('new_applicant', array('st_data' => '5'));
-				}
-				else {
-
-					$last = $this->MCrewscv->getDataQuery("SELECT idperson FROM mstpersonal ORDER BY idperson DESC LIMIT 1");
-					$newId = empty($last) ? '000001' : str_pad(intval($last[0]->idperson)+1, 6, '0', STR_PAD_LEFT);
-
-					$mname = isset($parts[1]) ? $parts[1] : '';
-					$lname = isset($parts[2]) ? implode(" ", array_slice($parts, 2)) : '';
-
-					$mstData = array(
-						'idperson'     => $newId,
-						'fname'        => $fname,
-						'mname'        => $mname,
-						'lname'        => $lname,
-						'email'        => $app->email,
-						'mobileno'     => $app->handphone,
-						'dob'          => $app->born_date,
-						'pob'          => $app->born_place,
-						'applyfor'     => $app->position_applied,
-						'newapplicent' => 1,
-						'addusrdt'     => $this->session->userdata('userCrewSystem')."/".date('Ymd')."/".date('H:i:s')
-					);
-
-					$this->MCrewscv->insData('mstpersonal', $mstData);
-
-					$username = $this->generateUniqueUsername($app->fullname);
-					$password = $username;
-
-					$this->MCrewscv->insData('crew_login', array(
-						'idperson'        => $newId,
-						'id_newapplicant' => $id,
-						'fullname'        => $app->fullname,
-						'username'        => $username,
-						'password'        => md5(strtolower($password)),
-						'AddUsrDt'        => $this->session->userdata('userCrewSystem')."/".date('Ymd')."/".date('H:i:s'),
-						'sts_delete'      => 0
-					));
-
-					$this->db->where('id', $id);
-					$this->db->update('new_applicant', array('st_data' => '5'));
-				}
+			if (empty($last)) {
+				$idPerson = '000001';
+			} else {
+				$idPerson = str_pad(((int)$last[0]->idperson + 1), 6, '0', STR_PAD_LEFT);
 			}
 
-			$sql = "SELECT email, fullname FROM new_applicant WHERE id = '".$id."' AND deletests = '0'";
-			$result = $this->MCrewscv->getDataQuery($sql);
+			// if (isset($parts[1])) {
+			// 	$mname = $parts[1];
+			// } else {
+			// 	$mname = '';
+			// }
 
-			if (empty($result)) {
-				echo json_encode(array('status' => 'error', 'message' => 'Data tidak ditemukan'));
-				return;
-			}
+			// if (count($parts) > 2) {
+			// 	$lname = implode(' ', array_slice($parts, 2));
+			// } else {
+			// 	$lname = '';
+			// }
 
-			$applicant = $result[0];
+			$fname = $parts[0];
+			$mname = isset($parts[1]) ? $parts[1] : '';
+			$lname = isset($parts[2]) ? implode(' ', array_slice($parts, 2)) : '';
 
-			$fullNameUser = $this->session->userdata('fullNameCrewSystem');
-			$fullNameUser = str_replace("'", "''", $fullNameUser);
-			$date = date('Y-m-d H:i:s');
 
-			$data = array(
+			$this->MCrewscv->insData('mstpersonal', array(
+				'idperson'     => $idPerson,
+				'fname'        => $fname,
+				'mname'        => $mname,
+				'lname'        => $lname,
+				'email'        => $app->email,
+				'mobileno'     => $app->handphone,
+				'dob'          => $app->born_date,
+				'pob'          => $app->born_place,
+				'applyfor'     => $app->position_applied,
+				'newapplicent' => 1,
+				'addusrdt'     => $this->session->userdata('userCrewSystem') . "/" . date('Ymd') . "/" . date('H:i:s')
+			));
+
+		}
+
+		$loginCheck = $this->MCrewscv->getDataQuery("
+			SELECT * FROM crew_login 
+			WHERE idperson = '".$idPerson."' 
+			AND sts_delete = 0
+			LIMIT 1
+		");
+
+		if (!empty($loginCheck)) {
+
+			$username = $loginCheck[0]->username;
+			$password = '(password existing)';
+
+		} else {
+
+			$username = $this->generateUniqueUsername($app->fullname);
+			$password = $username;
+
+			$this->MCrewscv->insData('crew_login', array(
+				'idperson'        => $idPerson,
+				'id_newapplicant' => $id,
+				'fullname'        => $app->fullname,
+				'username'        => $username,
+				'password'        => md5(strtolower($password)),
+				'AddUsrDt'        => $this->session->userdata('userCrewSystem')."/".date('Ymd/H:i:s'),
+				'sts_delete'      => 0
+			));
+		}
+
+		$fullNameUser = str_replace("'", "''", $this->session->userdata('fullNameCrewSystem'));
+		$date = date('Y-m-d H:i:s');
+
+		$this->MCrewscv->updateData(
+			array('id' => $id),
+			array(
 				'st_data' => 5,
 				'st_qualify' => 'Y',
 				'st_qualify2' => 'Y',
 				'adduserdate_stQualify2' => $fullNameUser . "#" . $date,
-				'adduserdate_stInterview' => $fullNameUser . "#" . $date,    
-			);
+				'adduserdate_stInterview' => $fullNameUser . "#" . $date
+			),
+			'new_applicant'
+		);
 
-			$where = array('id' => $id);
-			$this->MCrewscv->updateData($where, $data, 'new_applicant');
-
-			$this->sendInterviewWithAccountNotification(
-				$applicant->email,
-				$applicant->fullname,
-				$username,
-				$password
-			);
-
-
-			echo json_encode(array('status' => 'success', 'message' => 'Crew has been set for interview.'));
-
-		} else {
-			echo json_encode(array('status' => 'error', 'message' => 'ID tidak valid'));
-		}
+		$this->sendInterviewWithAccountNotification(
+			$app->email,
+			$app->fullname,
+			$username,
+			$password
+		);
+		
+		echo json_encode(array(
+			'status'   => 'success',
+			'message'  => 'Crew has been set for interview.',
+			'username' => $username,
+			'password' => $password,
+			'link'     => base_url('crew/getLoginCrew')
+		));
 	}
 
 
@@ -6356,6 +6416,8 @@ class Report extends CI_Controller {
 		$this->load->view("frontend/exportExpiredCert",$dataOut);
 	}
 
+
+	/* Start Form MLC */
 	function get_data_form_mlc()
 	{
 
@@ -6408,39 +6470,325 @@ class Report extends CI_Controller {
 
 	}
 
-	public function generate_mlc_pdf()
+	public function print_mlc_pdf()
 	{
-		
-		$checkbox_data = array();
-		for ($i = 1; $i <= 9; $i++) {
-			$value = $this->input->post('statement_' . $i);
-			$checkbox_data['statement_' . $i] = ($value === '1') ? 1 : 0;
-		}
-		
-		$crew = new stdClass();
-		$crew->idperson = $this->input->post('idperson');
-		$crew->fullname = $this->input->post('fullname');
-		$crew->nmrank = $this->input->post('nmrank');
-		$crew->signondt = $this->input->post('signondt');
-		$crew->nmvsl = $this->input->post('nmvsl');
-		
-		
-		$data = array(
-			'crew' => $crew,
-			'checkboxes' => $checkbox_data,
-			'all_data' => $_POST
-		);
+			$id = $this->input->post('id_report_mlc');
 
-		require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
-		$mpdf = new mPDF('utf-8', 'A4');
-		
-		$html = $this->load->view('frontend/form_mlc_pdf', $data, TRUE);
-		$mpdf->WriteHTML($html);
-		
-		$filename = "MLC_Form_" . $crew->fullname . ".pdf";
-		$mpdf->Output($filename, 'I');
-		exit;
+			if (empty($id)) {
+					show_error('Invalid MLC ID');
+			}
+
+			// ambil report_mlc
+			$mlc = $this->db->where('id', $id)->get('report_mlc')->row();
+			if (!$mlc) {
+					show_error('Data MLC tidak ditemukan');
+			}
+
+			// ambil jawaban
+			$answers = $this->db
+					->where('id_report_mlc', $id)
+					->get('report_answer_form_mlc')
+					->row();
+
+			// crew object
+			$crew = new stdClass();
+			$crew->idperson = $mlc->id_person;
+			$crew->fullname = $mlc->name_person;
+			$crew->nmrank   = $mlc->rank;
+			$crew->nmvsl    = $mlc->vessel_name;
+			$crew->signondt = $mlc->date_request;
+
+			// checkbox
+			$checkbox_data = array();
+			for ($i = 1; $i <= 9; $i++) {
+					$checkbox_data['statement_'.$i] = isset($answers->{'answer_'.$i})
+							? (int)$answers->{'answer_'.$i}
+							: 0;
+			}
+
+			$data = array(
+					'crew'       => $crew,
+					'checkboxes' => $checkbox_data,
+					'all_data'   => $checkbox_data
+			);
+
+			require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
+			$mpdf = new mPDF('utf-8', 'A4');
+
+			$html = $this->load->view('frontend/form_mlc_pdf', $data, TRUE);
+			$mpdf->WriteHTML($html);
+
+			$mpdf->Output("MLC_Form_{$crew->fullname}.pdf", 'I');
+			exit;
 	}
+
+	public function save_form_mcl()
+	{
+
+			$checkbox_data = array();
+			for ($i = 1; $i <= 9; $i++) {
+					$value = $this->input->post('statement_' . $i);
+					$checkbox_data['statement_' . $i] = ($value === '1') ? 1 : 0;
+			}
+
+			$crew = array(
+					'id_person'    => $this->input->post('idperson'),
+					'name_person'  => $this->input->post('fullname'),
+					'rank'         => $this->input->post('nmrank'),
+					'vessel_name'  => $this->input->post('nmvsl'),
+					'date_request' => date('Y-m-d')
+			);
+
+			$this->db->trans_begin();
+
+			$this->db->insert('report_mlc', $crew);
+			$id_report_mlc = $this->db->insert_id();
+
+			$answer_data = array(
+					'id_report_mlc' => $id_report_mlc,
+					'answer_1' => $checkbox_data['statement_1'],
+					'answer_2' => $checkbox_data['statement_2'],
+					'answer_3' => $checkbox_data['statement_3'],
+					'answer_4' => $checkbox_data['statement_4'],
+					'answer_5' => $checkbox_data['statement_5'],
+					'answer_6' => $checkbox_data['statement_6'],
+					'answer_7' => $checkbox_data['statement_7'],
+					'answer_8' => $checkbox_data['statement_8'],
+					'answer_9' => $checkbox_data['statement_9']
+			);
+
+
+		$this->db->insert('report_answer_form_mlc', $answer_data);
+		if ($this->db->trans_status() === FALSE) {
+				$this->db->trans_rollback();
+				echo json_encode(array(
+						'status' => false,
+						'message' => 'Gagal menyimpan Form MLC'
+				));
+		} else {
+				$this->db->trans_commit();
+				echo json_encode(array(
+						'status' => true,
+						'message' => 'Form MLC berhasil dibuat'
+				));
+		}
+
+	}
+
+	public function get_report_mlc()
+	{
+			$name = $this->input->get('name', true);
+
+			$sql = "
+					SELECT
+							a.id,
+							a.id_person,
+							a.name_person,
+							a.rank,
+							a.vessel_name,
+							a.date_request
+					FROM report_mlc a
+					WHERE 1=1
+			";
+
+			if (!empty($name)) {
+					$name = $this->db->escape_like_str($name);
+					$sql .= " AND a.name_person LIKE '%{$name}%'";
+			}
+
+			$sql .= " ORDER BY a.id DESC";
+
+			$data = $this->MCrewscv->getDataQuery($sql);
+			$result = array();
+
+			if (!empty($data)) {
+					foreach ($data as $row) {
+
+							$row->date_request = !empty($row->date_request)
+									? date('d M Y', strtotime($row->date_request))
+									: '-';
+
+							$result[] = $row;
+					}
+			}
+
+			echo json_encode(array(
+					'success' => true,
+					'data'    => $result
+			));
+	}
+
+
+	public function delete_report_mlc()
+	{
+			$id = $this->input->post('id');
+
+			if (empty($id)) {
+					echo json_encode(array(
+							'status' => false,
+							'message' => 'ID tidak valid'
+					));
+					exit;
+			}
+
+			$this->db->trans_begin();
+
+			// hapus jawaban dulu (child)
+			$this->db->where('id_report_mlc', $id);
+			$this->db->delete('report_answer_form_mlc');
+
+			// hapus report mlc (parent)
+			$this->db->where('id', $id);
+			$this->db->delete('report_mlc');
+
+			if ($this->db->trans_status() === FALSE) {
+					$this->db->trans_rollback();
+					echo json_encode(array(
+							'status' => false,
+							'message' => 'Gagal menghapus data MLC'
+					));
+			} else {
+					$this->db->trans_commit();
+					echo json_encode(array(
+							'status' => true,
+							'message' => 'Data MLC berhasil dihapus'
+					));
+			}
+			exit;
+	}
+/* End Form MLC */
+
+
+	/* Start Form Debriefing */
+	public function save_debriefing()
+	{
+			// ================= HEADER =================
+			$report = array(
+					'id_person'      => $this->input->post('idperson', true),
+					'name_person'    => $this->input->post('nama_crew', true),
+					'rank'           => $this->input->post('jabatan', true),
+					'vessel_name'    => $this->input->post('vessel', true),
+					'pelabuhan'      => $this->input->post('pelabuhan', true),
+					'no_telp'        => $this->input->post('no_telp', true),
+					'date_request'   => date('Y-m-d'),
+					'sign_on'        => $this->input->post('tgl_join', true),
+					'sign_off'       => $this->input->post('tgl_signoff', true),
+					'available_join' => $this->input->post('siap_join', true)
+			);
+
+			$this->db->insert('report_debriefing', $report);
+			$id_report = $this->db->insert_id();
+
+			if (!$id_report) {
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Gagal menyimpan debriefing'
+					));
+					return;
+			}
+
+			// ================= ANSWERS =================
+			$answers_input = $this->input->post('answers', true);
+			$answers_data  = json_decode($answers_input, true);
+
+			$answers = array(
+					'id_report_debriefing' => $id_report,
+					'certificates'         => $this->input->post('certificates', true),
+					'remarks'              => $this->input->post('remask_form_deb', true)
+			);
+
+			for ($i = 1; $i <= 9; $i++) {
+					$key = 'answer_' . $i;
+					$answers[$key] = isset($answers_data[$key]) ? $answers_data[$key] : '';
+			}
+
+			$this->db->insert('report_answer_debriefing', $answers);
+
+			echo json_encode(array(
+					'success' => true,
+					'message' => 'Debriefing berhasil disimpan'
+			));
+	}
+
+	public function delete_debriefing()
+	{
+			$id = $this->input->post('id', true);
+
+			if (empty($id)) {
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'ID tidak valid'
+					));
+					return;
+			}
+
+			// cek data ada atau tidak
+			$cek = $this->db->where('id', $id)->get('report_debriefing')->row();
+			if (!$cek) {
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Data tidak ditemukan'
+					));
+					return;
+			}
+
+			// mulai transaksi
+			$this->db->trans_begin();
+
+			// hapus detail jawaban
+			$this->db->where('id_report_debriefing', $id)
+							->delete('report_answer_debriefing');
+
+			// hapus header
+			$this->db->where('id', $id)
+							->delete('report_debriefing');
+
+			if ($this->db->trans_status() === FALSE) {
+					$this->db->trans_rollback();
+					echo json_encode(array(
+							'success' => false,
+							'message' => 'Gagal menghapus data'
+					));
+			} else {
+					$this->db->trans_commit();
+					echo json_encode(array(
+							'success' => true,
+							'message' => 'Data berhasil dihapus'
+					));
+			}
+	}
+
+
+
+	public function get_report_debriefing()
+	{
+			$keyword = $this->input->get('keyword', true);
+
+			$this->db->select('*');
+			$this->db->from('report_debriefing');
+
+			if (!empty($keyword)) {
+					$this->db->like('name_person', $keyword);
+			}
+
+			$this->db->order_by('id', 'DESC');
+			$data = $this->db->get()->result();
+
+			$result = array();
+			foreach ($data as $row) {
+					$row->date_request = !empty($row->date_request)
+							? date('d M Y', strtotime($row->date_request))
+							: '-';
+					$result[] = $row;
+			}
+
+			echo json_encode(array(
+					'success' => true,
+					'data'    => $result
+			));
+	}
+
+
 
 
 	function get_data_form_defbreafing()
@@ -6494,87 +6842,66 @@ class Report extends CI_Controller {
 		));
 	}
 
-	// public function generatePDF_Breafing()
-	// {
-	
-	// 	$crew = new stdClass();
-	// 	$crew->idperson    = $this->input->post('idperson', true);
-	// 	$crew->nama_crew   = $this->input->post('nama_crew', true);
-	// 	$crew->jabatan     = $this->input->post('jabatan', true);
-	// 	$crew->vessel      = $this->input->post('vessel', true);
-	// 	$crew->pelabuhan   = $this->input->post('pelabuhan', true);
-	// 	$crew->no_telp     = $this->input->post('no_telp', true);
-	// 	$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
-	// 	$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
-	// 	$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
-	// 	$crew->certificates     = $this->input->post('certificates', true);
 
-	// 	$data = array(
-	// 		'crew' => $crew
-	// 	);
-
-
-	// 	require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
-
-	// 	$mpdf = new mPDF('utf-8', 'A4');
-	// 	$mpdf->SetTitle('Form Debriefing');
-
-	// 	$html = $this->load->view('frontend/form_defbreafing_pdf', $data, TRUE);
-	// 	$mpdf->WriteHTML($html);
-
-	// 	$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
-
-	// 	$mpdf->Output($filename, 'I');
-	// 	exit;
-	// }
 	public function generatePDF_Breafing()
 	{
-		
-			$crew = new stdClass();
-			$crew->idperson    = $this->input->post('idperson', true);
-			$crew->nama_crew   = $this->input->post('nama_crew', true);
-			$crew->jabatan     = $this->input->post('jabatan', true);
-			$crew->vessel      = $this->input->post('vessel', true);
-			$crew->pelabuhan   = $this->input->post('pelabuhan', true);
-			$crew->no_telp     = $this->input->post('no_telp', true);
-			$crew->tgl_join    = date('d M Y', strtotime($this->input->post('tgl_join', true)));
-			$crew->tgl_signoff = date('d M Y', strtotime($this->input->post('tgl_signoff', true)));
-			$crew->siap_join   = date('d M Y', strtotime($this->input->post('siap_join', true)));
-			$crew->certificates = $this->input->post('certificates', true);
-			$crew->remask_form_deb = $this->input->post('remask_form_deb', true);
-			
-			$answers = new stdClass();
-			$answers_input = $this->input->post('answers', true);
-			
-			// Decode JSON string
-			if (!empty($answers_input)) {
-					$answers_array = json_decode($answers_input, true);
-					
-					if (json_last_error() === JSON_ERROR_NONE && is_array($answers_array)) {
-							foreach ($answers_array as $key => $value) {
-									$answers->$key = $value;
-							}
-					} else {
-							error_log("JSON decode error: " . json_last_error_msg());
-					}
-			}
-			
-			for ($i = 1; $i <= 9; $i++) {
-					$key = 'answer_' . $i;
-					if (!isset($answers->$key) || $answers->$key === null) {
-							$answers->$key = '';
-					}
+			$id_report = $this->input->post('id_report', true);
+
+			if (empty($id_report)) {
+					show_error('ID Report tidak valid');
 			}
 
+			$crew_db = $this->db
+					->where('id', $id_report)
+					->get('report_debriefing')
+					->row();
+
+			if (!$crew_db) {
+					show_error('Data debriefing tidak ditemukan');
+			}
+
+			$crew = new stdClass();
+			$crew->idperson    = $crew_db->id_person;
+			$crew->nama_crew   = $crew_db->name_person;
+			$crew->jabatan     = $crew_db->rank;
+			$crew->vessel      = $crew_db->vessel_name;
+			$crew->pelabuhan   = $crew_db->pelabuhan;
+			$crew->no_telp     = $crew_db->no_telp;
+
+			$crew->tgl_join    = $crew_db->sign_on 
+					? date('d M Y', strtotime($crew_db->sign_on)) : '';
+			$crew->tgl_signoff = $crew_db->sign_off 
+					? date('d M Y', strtotime($crew_db->sign_off)) : '';
+			$crew->siap_join   = $crew_db->available_join 
+					? date('d M Y', strtotime($crew_db->available_join)) : '';
+
+
+			$ans_db = $this->db
+					->where('id_report_debriefing', $id_report)
+					->get('report_answer_debriefing')
+					->row();
+
+			$answers = new stdClass();
+
+			for ($i = 1; $i <= 9; $i++) {
+					$key = 'answer_' . $i;
+					$answers->$key = isset($ans_db->$key) ? $ans_db->$key : '';
+			}
+
+			$crew->certificates  = !empty($ans_db->certificates) ? $ans_db->certificates : '';
+			$crew->remask_form_deb      = !empty($ans_db->remarks) ? $ans_db->remarks : '';
+
+
+
 			$data = array(
-					'crew' => $crew,
+					'crew'    => $crew,
 					'answers' => $answers
 			);
 
-			// echo "<pre>";
-			// print_r($data);
-			// echo "</pre>";
+			// echo '<pre>';
+			// print_r($ans_db);
 			// exit;
+
 
 			require(APPPATH . "views/frontend/pdf/mpdf60/mpdf.php");
 
@@ -6587,6 +6914,9 @@ class Report extends CI_Controller {
 			$filename = "DEBRIEFING_Form_" . date('Ymd_His') . ".pdf";
 			$mpdf->Output($filename, 'D');
 	}
+
+
+	/* End Form Debriefing */
 
 
 

@@ -2786,10 +2786,17 @@ $isUser44    = ($userId === '44');
         });
     }
 
-    function interviewCrewQualify(id, name) {
+    function interviewCrewQualify(el) {
+
+        const id = el.dataset.id;
+        const name = el.dataset.name;
+
         Swal.fire({
             title: 'Konfirmasi',
-            html: `Apakah anda yakin ingin menandai <b>${name}</b> untuk proses <span style="color:#067780;font-weight:600;">Interview</span>?`,
+            html: `
+                Apakah anda yakin ingin menandai <b>${name}</b> 
+                untuk proses <span style="color:#067780;font-weight:600;">Interview</span>?
+            `,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#067780',
@@ -2797,6 +2804,7 @@ $isUser44    = ($userId === '44');
             confirmButtonText: 'Ya, Set Interview',
             cancelButtonText: 'Batal'
         }).then((result) => {
+
             if (!result.isConfirmed) return;
 
             $("#idLoadingSpinnerQualifiedCrew").fadeIn();
@@ -2809,35 +2817,77 @@ $isUser44    = ($userId === '44');
                 },
                 dataType: "json",
                 success: function(response) {
+
                     $("#idLoadingSpinnerQualifiedCrew").fadeOut();
 
+                    window.copyInterviewData =
+                        `Link Login:
+                    ${response.link}
+
+                    Username: ${response.username}
+                    Password: ${response.password}`
+
                     Swal.fire({
-                        title: 'Berhasil!',
-                        text: 'Crew telah berhasil ditandai untuk proses Interview.',
+                        title: 'Interview Set!',
+                        html: `
+                            <div style="text-align:left;font-size:13px;">
+                                <b>Link Login:</b><br>
+                                <input type="text"
+                                    style="width:100%;margin-bottom:6px;"
+                                    value="${response.link}" readonly>
+
+                                <b>Username:</b> ${response.username}<br>
+                                <b>Password:</b> ${response.password}
+
+                                <button
+                                    type="button"
+                                    class="btn btn-xs btn-info"
+                                    style="margin-top:10px;"
+                                    onclick="copyAllSafe()">
+                                    📋 Copy Semua
+                                </button>
+                            </div>
+                        `,
                         icon: 'success',
-                        confirmButtonColor: '#067780'
+                        confirmButtonColor: '#067780',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
                     });
 
-                    let currentPage = $('#tableDataQualifiedCrew').attr('data-current-page') ||
-                        1;
-
+                    let currentPage = $('#tableDataQualifiedCrew').attr('data-current-page') || 1;
                     if ($("#idTbodyQualifiedCrew tr").length <= 2) {
                         currentPage = Math.max(1, currentPage - 1);
                     }
-
                     loadPageDataQualified(currentPage);
                 },
-                error: function(xhr, status, error) {
+                error: function(xhr) {
                     $("#idLoadingSpinnerQualifiedCrew").fadeOut();
-
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Terjadi kesalahan sistem: ' + error,
-                        icon: 'error',
-                        confirmButtonColor: '#d33'
-                    });
+                    Swal.fire('Error', xhr.responseText, 'error');
                 }
             });
+        });
+    }
+
+    function copyAllSafe() {
+
+        if (!window.copyInterviewData) {
+            Swal.fire('Error', 'Data belum siap untuk disalin', 'error');
+            return;
+        }
+
+        navigator.clipboard.writeText(window.copyInterviewData).then(() => {
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Link & akun berhasil disalin',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+        }).catch(() => {
+            Swal.fire('Gagal', 'Browser tidak mengizinkan copy otomatis', 'error');
         });
     }
 
@@ -3808,368 +3858,6 @@ $isUser44    = ($userId === '44');
         }
     }
 
-    /*Print Form Mlc start */
-    function click_form_mlc() {
-        var get_idperson = $("#txtIdPerson").val();
-
-        if (!get_idperson) {
-            alert("Person Empty!");
-            return;
-        }
-
-        $("#modal-form-mlc").modal("show");
-        // console.log("ID Person:", get_idperson);
-
-        $.ajax({
-            url: "<?php echo base_url('report/get_data_form_mlc'); ?>",
-            type: "POST",
-            data: {
-                idperson: get_idperson
-            },
-            dataType: "json",
-            success: function(res) {
-                if (!res.success || !res.data || res.data.length === 0) {
-                    alert("Data tidak ditemukan!");
-                    return;
-                }
-
-                var data = res.data[0];
-                $("#name-crew-mlc").text(data.fullname);
-                $("#jabatan-crew-mlc").text(data.nmrank);
-                $("#date-crew-mlc").text(data.signondt);
-                $("#vessel-crew-mlc").text(data.nmvsl);
-            },
-            error: function(xhr, status, error) {
-                console.log("AJAX Error:", error);
-                alert("Error fetching data.");
-            }
-        });
-    }
-
-    $(document).ready(function() {
-        $('.check-box').on('change', function() {
-            const $this = $(this);
-            const isYes = $this.hasClass('yes-checkbox');
-            const pairedName = isYes ?
-                $this.data('no-checkbox') :
-                $this.data('yes-checkbox');
-
-            if ($this.is(':checked')) {
-                $(`[name="${pairedName}"]`).prop('checked', false);
-            }
-        });
-
-        function getAllCheckboxValues() {
-            const values = {};
-            let allFilled = true;
-            const missingStatements = [];
-
-            for (let i = 1; i <= 9; i++) {
-                const $yesCheckbox = $(`[name="statement_${i}"]`);
-                const $noCheckbox = $(`[name="statement_${i}_no"]`);
-
-
-                if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
-                    allFilled = false;
-                    missingStatements.push(i);
-                }
-
-                values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 :
-                    ($noCheckbox.is(':checked') ? 0 : null);
-            }
-
-            return {
-                values: values,
-                allFilled: allFilled,
-                missingStatements: missingStatements
-            };
-        }
-
-
-        function showCheckboxValues() {
-            const result = getAllCheckboxValues();
-
-            // console.log('=== CHECKBOX VALUES ===');
-            // console.log('Nilai per statement:');
-
-            // Tampilkan dalam format tabel
-            for (let i = 1; i <= 9; i++) {
-                const value = result.values[`statement_${i}`];
-                const status = value === 1 ? 'Yes (1)' :
-                    value === 0 ? 'No (0)' :
-                    'Belum dipilih';
-                //console.log(`Statement ${i}: ${status}`);
-            }
-
-            // // Tampilkan dalam bentuk object
-            // console.log('Data Object:', result.values);
-
-            // // Tampilkan summary
-            // console.log('Summary:');
-            // console.log(`- Total statements: 9`);
-            // console.log(`- Terisi: ${Object.values(result.values).filter(v => v !== null).length}`);
-            // console.log(`- Belum terisi: ${Object.values(result.values).filter(v => v === null).length}`);
-
-            return result;
-        }
-
-        $('#btn-print-form-mlc').on('click', function() {
-            console.clear(); // Clear console dulu
-
-            const result = getAllCheckboxValues();
-            if (!result.allFilled) {
-                alert(
-                    `Harap pilih semua statement!\n\nStatement yang belum dipilih: ${result.missingStatements.join(', ')}`
-                );
-
-                $('tr').removeClass('missing-row');
-                result.missingStatements.forEach(num => {
-                    $(`[name="statement_${num}"]`).closest('tr').addClass('missing-row');
-                });
-
-                return;
-            }
-
-
-            showCheckboxValues();
-            generatePDF(result.values);
-        });
-
-        function generatePDF(checkboxValues) {
-            var idperson = $("#txtIdPerson").val();
-            var name_crew = $("#name-crew-mlc").text();
-            var jabatan_crew = $("#jabatan-crew-mlc").text();
-            var date_crew = $("#date-crew-mlc").text();
-            var vessel_crew = $("#vessel-crew-mlc").text();
-
-            // Gabungkan semua data
-            const data = {
-                ...checkboxValues,
-                idperson: idperson,
-                fullname: name_crew,
-                nmrank: jabatan_crew,
-                signondt: date_crew,
-                nmvsl: vessel_crew
-            };
-
-            // console.log('Data untuk dikirim ke server:', data);
-            submitPostData(data);
-        }
-
-        function submitPostData(data) {
-            const form = document.createElement('form');
-            form.id = 'tempMlcForm';
-            form.method = 'POST';
-            form.action = '<?php echo base_url("report/generate_mlc_pdf"); ?>';
-            form.target = '_blank';
-            form.style.display = 'none';
-
-            // Tambahkan data
-            Object.keys(data).forEach(key => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = data[key];
-                form.appendChild(input);
-            });
-
-
-            const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
-            const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
-
-            if (csrfName && csrfHash) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = csrfName;
-                csrfInput.value = csrfHash;
-                form.appendChild(csrfInput);
-            }
-
-            // Tambahkan ke body dan submit
-            document.body.appendChild(form);
-            form.submit();
-
-            // Cleanup setelah 1 detik
-            setTimeout(() => {
-                if (document.getElementById('tempMlcForm')) {
-                    document.body.removeChild(form);
-                }
-            }, 1000);
-        }
-    });
-
-    /*Print Form Mlc End */
-
-
-    /*Print Form defbreafing Start */
-
-    function generateBreafingPDF() {
-        var idperson = $("#txtIdPerson").val();
-        console.log(idperson);
-
-        const data = {
-            idperson: idperson
-        };
-
-        submitPostData_Breafing(data);
-    }
-
-    $(document).ready(function() {
-        $('#btn-form-bereafing').on('click', function() {
-            console.clear();
-            generateBreafingPDF(); // ✅ sekarang kebaca
-        });
-    });
-
-    function click_form_defbreafing() {
-        var get_idperson = $("#txtIdPerson").val();
-
-        if (!get_idperson) {
-            alert("Person Empty!");
-            return;
-        }
-
-        $("#modal-form-debriefing").modal("show");
-
-        $.ajax({
-            url: "<?php echo base_url('report/get_data_form_defbreafing'); ?>",
-            type: "POST",
-            data: {
-                idperson: get_idperson
-            },
-            dataType: "json",
-            success: function(res) {
-                // console.log(res);
-                if (!res.success || !res.data) {
-                    alert("Data tidak ditemukan!");
-                    return;
-                }
-
-                // // // Contoh isi ke HTML
-                $("#val-vessel-defbreafing").text(res.data[0].nama_kapal);
-                $("#val-palabuhan-defbreafing").text(res.data[0].pelabuhan);
-                $("#val-jabatan-defbreafing").text(res.data[0].jabatan);
-                $("#val-telp-defbreafing").text(res.data[0].no_telp);
-                $("#val-namecrew-defbreafing").text(res.data[0].nama_crew);
-                $("#val-tgljoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));
-                $("#val-tglsignoff-defbreafing").val(formatDateToInput(res.data[0].tgl_signoff));
-                $("#val-siapjoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));
-
-            },
-            error: function(xhr, status, error) {
-                console.log("AJAX Error:", xhr.responseText);
-                alert("Error fetching data.");
-            }
-        });
-    }
-
-    function formatDateToInput(dateStr) {
-        if (!dateStr) return '';
-
-        const d = new Date(dateStr);
-        if (isNaN(d)) return '';
-
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const year = d.getFullYear();
-
-        return `${year}-${month}-${day}`;
-    }
-
-
-    function generateBreafingPDF() {
-
-        var idperson = $("#txtIdPerson").val();
-
-        if (!idperson) {
-            alert("ID Person kosong!");
-            return;
-        }
-
-        let answers = {};
-
-        // Loop untuk mengambil data dari form-deb-answer_1 sampai form-deb-answer_9
-        for (let i = 1; i <= 9; i++) {
-            let elementId = 'form-deb-answer_' + i;
-            let $element = $("#" + elementId);
-
-            if ($element.length) {
-                // Ambil value atau text berdasarkan tipe elemen
-                answers['answer_' + i] = $element.val() || $element.text() || "";
-            } else {
-                answers['answer_' + i] = "";
-            }
-        }
-
-
-        remask_form_deb = $("#form-deb-remaks-box").val();
-
-
-
-        // Ambil data dari tampilan (pakai .text())
-        const data = {
-            idperson: idperson,
-            vessel: $("#val-vessel-defbreafing").text(),
-            pelabuhan: $("#val-palabuhan-defbreafing").text(),
-            jabatan: $("#val-jabatan-defbreafing").text(),
-            no_telp: $("#val-telp-defbreafing").text(),
-            nama_crew: $("#val-namecrew-defbreafing").text(),
-            tgl_join: $("#val-tgljoin-defbreafing").val(),
-            tgl_signoff: $("#val-tglsignoff-defbreafing").val(),
-            siap_join: $("#val-siapjoin-defbreafing").val(),
-            certificates: $("#certificates-input-document").val(),
-            answers: JSON.stringify(answers),
-            remask_form_deb: remask_form_deb
-
-        };
-
-        // console.log("Data dikirim ke server:", data);
-        // return false;
-
-        submitPostData_Breafing(data);
-    }
-
-
-    function submitPostData_Breafing(data) {
-        const form = document.createElement('form');
-        form.id = 'tempBreafingForm';
-        form.method = 'POST';
-        form.action = '<?php echo base_url("report/generatePDF_Breafing"); ?>';
-        form.target = '_blank';
-        form.style.display = 'none';
-
-        // Tambahkan data
-        Object.keys(data).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = data[key];
-            form.appendChild(input);
-        });
-
-
-        const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
-        const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
-
-        if (csrfName && csrfHash) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = csrfName;
-            csrfInput.value = csrfHash;
-            form.appendChild(csrfInput);
-        }
-
-        // Tambahkan ke body dan submit
-        document.body.appendChild(form);
-        form.submit();
-
-        // Cleanup setelah 1 detik
-        setTimeout(() => {
-            if (document.getElementById('tempBreafingForm')) {
-                document.body.removeChild(form);
-            }
-        }, 1000);
-    }
 
     /*start form mcu*/
     function open_modal_form_mcu() {
@@ -4970,22 +4658,24 @@ $isUser44    = ($userId === '44');
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="cetakCovid19();" id="btn-print-covid19"  
-                                        style="white-space: normal; word-wrap: break-word; text-align:center;" disabled="disabled">
+                                        onclick="cetakCovid19();" id="btn-print-covid19"
+                                        style="white-space: normal; word-wrap: break-word; text-align:center;"
+                                        disabled="disabled">
                                         <i class="fa fa-print"></i> Print Covid-19 Prevention
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" onclick="cetakLetter();"
-                                        style="white-space: normal; word-wrap: break-word; text-align:center;" disabled="disabled"
-                                        id="btn-letter-statement">
+                                        style="white-space: normal; word-wrap: break-word; text-align:center;"
+                                        disabled="disabled" id="btn-letter-statement">
                                         <i class="fa fa-print"></i> Letter Statement
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak"
-                                        onclick="cetakSeafarerContract();" id="btn-seafarer-employment" disabled="disabled"
-                                        style="white-space: normal; word-wrap: break-word; text-align:center;font-size:11px;"> 
+                                        onclick="cetakSeafarerContract();" id="btn-seafarer-employment"
+                                        disabled="disabled"
+                                        style="white-space: normal; word-wrap: break-word; text-align:center;font-size:11px;">
                                         <i class="fa fa-print"></i> Seafarer Employment Agreement
                                     </button>
                                 </div>
@@ -4997,13 +4687,13 @@ $isUser44    = ($userId === '44');
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" disabled="disabled"
-                                        onclick="click_form_mlc();" id="btn-form-mlc">
+                                        onclick="click_list_mlc();" id="btn-form-mlc">
                                         <i class="fa fa-print"></i> MLC Declaration Form
                                     </button>
                                 </div>
                                 <div class="col-md-3" style="margin-top: 10px;">
                                     <button class="btn btn-info btn-sm btn-block" title="Cetak" disabled="disabled"
-                                        onclick="click_form_defbreafing();" id="btn-form-debriefing">
+                                        onclick="click_list_debriefing();" id="btn-form-debriefing">
                                         <i class="fa fa-print"></i> Debriefing
                                     </button>
                                 </div>
@@ -5499,7 +5189,6 @@ $isUser44    = ($userId === '44');
 
                 <div style="display:flex; gap:7px; margin-bottom:1rem;">
 
-                    <!-- NEW APPLICANTS -->
                     <?php if ($isAllAccess || $isUser44) { ?>
                     <button id="btnOpenNewApplicants" class="btn btn-success btn-sm" style="flex:1;">
                         View All New Applicants
@@ -10048,8 +9737,7 @@ $isUser44    = ($userId === '44');
                         <table class="sign-grid">
                             <tr>
                                 <td class="sign-box">
-
-                                    <div class="sign-title">Vessel to Join</div>
+                                    <div class="sign-title">Vessel To Join</div>
                                     <div class="long-line-header"
                                         style="width: 20%;border-bottom: 1px solid #000;margin-left:155px;"></div>
                                     <div class="sign-sub" id="vessel-crew-mlc">Kapal yang akan dituju</div>
@@ -10061,8 +9749,8 @@ $isUser44    = ($userId === '44');
                 <div class="modal-footer">
                     <input type="hidden" id="txtIdPerson" value="">
                     <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="btn-print-form-mlc"
-                        onclick="click_print_sdfsdf()">Print</button>
+                    <button type="button" class="btn btn-success" id="btn-print-form-mlc"
+                        >Submit</button>
                 </div>
             </div>
 
@@ -10274,8 +9962,8 @@ $isUser44    = ($userId === '44');
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="btn-form-bereafing">
-                        <i class="bi bi-printer"></i> Print
+                    <button type="button" class="btn btn-success" id="btn-form-bereafing">
+                        <i class="bi bi-printer"></i> Submit
                     </button>
                 </div>
             </div>
@@ -10717,8 +10405,721 @@ $isUser44    = ($userId === '44');
         </div>
     </div>
 
+     <!-- Modal Report MLC -->
+    <div class="modal fade" id="modal-report-mlc" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header" style="background-color:#067780;  color:white;">
+                    <h4 class="modal-title" style="color:white;">List MLC</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row" style="margin-top:15px;">
+                        <button type="button" class="btn btn-success" style="padding-left:10px; font-size: 15px;"
+                            onclick="click_form_mlc()">
+                            + New
+                        </button>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text"
+                                    class="form-control"
+                                    id="searchNameMlc"
+                                    placeholder="Search Seafarer's Name...">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary" id="btnSearchMlc">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table table-bordered table-sm table-striped" border="1" style="margin-top:20px;">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th style="width:40px;">No</th>
+                                <th>Seafarer's Name</th>
+                                <th>Rank</th>
+                                <th>Date MLC</th>
+                                <th>Vessel</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-report-mlc">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    Loading data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div class="modal fade" id="modal-report-debriefing">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:#067780;  color:white;">
+                <h4 class="modal-title" style="color:white;">List Debriefing </h4>
+            </div>
+            <div class="modal-body">
+                <div class="row" style="margin-top:15px;">
+                    <button type="button" class="btn btn-success" style="padding-left:10px; font-size: 15px;"
+                        onclick="openDebriefingForm()">
+                        + New
+                    </button>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text"
+                                class="form-control"
+                                id="searchDebriefing"
+                                placeholder="Search Seafarer's Name...">
+                            <span class="input-group-btn">
+                                <button class="btn btn-primary" id="btnSearchDebriefing">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <table class="table table-bordered table-striped mt-3">
+                    <thead class="text-center">
+                        <tr>
+                            <th>No</th>
+                            <th>Name</th>
+                            <th>Rank</th>
+                            <th>Vessel</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-debriefing">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 
 
 </html>
+
+<script>
+    /* Start Form MLC */
+    $(document).ready(function() {
+        $('.check-box').on('change', function() {
+            const $this = $(this);
+            const isYes = $this.hasClass('yes-checkbox');
+            const pairedName = isYes ?
+                $this.data('no-checkbox') :
+                $this.data('yes-checkbox');
+
+            if ($this.is(':checked')) {
+                $(`[name="${pairedName}"]`).prop('checked', false);
+            }
+        });
+
+
+        $('#btn-print-form-mlc').on('click', function() {
+            console.clear(); // Clear console dulu
+            const result = getAllCheckboxValues();
+            if (!result.allFilled) {
+                alert(
+                    `Harap pilih semua statement!\n\nStatement yang belum dipilih: ${result.missingStatements.join(', ')}`
+                );
+
+                $('tr').removeClass('missing-row');
+                result.missingStatements.forEach(num => {
+                    $(`[name="statement_${num}"]`).closest('tr').addClass('missing-row');
+                });
+                return;
+            }
+            showCheckboxValues();
+            generatePDF(result.values);
+        });
+
+        function generatePDF(checkboxValues) {
+            var idperson = $("#txtIdPerson").val();
+            var name_crew = $("#name-crew-mlc").text();
+            var jabatan_crew = $("#jabatan-crew-mlc").text();
+            var date_crew = $("#date-crew-mlc").text();
+            var vessel_crew = $("#vessel-crew-mlc").text();
+
+            // Gabungkan semua data
+            const data = {
+                ...checkboxValues,
+                idperson: idperson,
+                fullname: name_crew,
+                nmrank: jabatan_crew,
+                signondt: date_crew,
+                nmvsl: vessel_crew
+            };
+
+            // console.log('Data untuk dikirim ke server:', data);
+            submitPostData(data);
+        }
+
+        function submitPostData(data) {
+            $.ajax({
+                url: '<?php echo base_url("report/save_form_mcl"); ?>',
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                success: function (res) {
+                    if (res.status) {
+                        alert(res.message);
+                        $("#modal-form-mlc").modal("hide");
+                        $('.check-box').prop('checked', false); // RESET SEMUA CHECKBOX
+                        loadReportMLC('');
+                        $("#modal-report-mlc").modal("show");
+                    } else {
+                        alert(res.message);
+                    }
+                },
+                error: function () {
+                    alert('Terjadi kesalahan sistem');
+                }
+            });
+        }
+
+        $(document).on('click', '.btnDeleteMlcReport', function () {
+            const id = $(this).data('id');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'You won\'t be able to revert this!!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Delete!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteReportMLC(id);
+                }
+            });
+        });
+
+        $(document).on('click', '.btnViewMlcReport', function () {
+            const id = $(this).data('id');
+            submitPrintMlc(id);
+        });
+
+        // klik search
+        $('#btnSearchMlc').on('click', function () {
+            const keyword = $('#searchNameMlc').val();
+            loadReportMLC(keyword);
+        });
+
+        // enter key
+        $('#searchNameMlc').on('keyup', function (e) {
+            if (e.keyCode === 13) {
+                $('#btnSearchMlc').click();
+            }
+        });
+
+    });
+
+    function submitPrintMlc(id) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?php echo base_url("report/print_mlc_pdf"); ?>';
+        form.target = '_blank';
+        form.style.display = 'none';
+
+        // kirim ID report
+        const inputId = document.createElement('input');
+        inputId.type = 'hidden';
+        inputId.name = 'id_report_mlc';
+        inputId.value = id;
+        form.appendChild(inputId);
+
+        // CSRF
+        const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
+        const csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
+
+        if (csrfName && csrfHash) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = csrfName;
+            csrfInput.value = csrfHash;
+            form.appendChild(csrfInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+
+        setTimeout(() => {
+            document.body.removeChild(form);
+        }, 1000);
+    }
+
+    function getAllCheckboxValues() {
+            const values = {};
+            let allFilled = true;
+            const missingStatements = [];
+
+            for (let i = 1; i <= 9; i++) {
+                const $yesCheckbox = $(`[name="statement_${i}"]`);
+                const $noCheckbox = $(`[name="statement_${i}_no"]`);
+
+                if (!$yesCheckbox.is(':checked') && !$noCheckbox.is(':checked')) {
+                    allFilled = false;
+                    missingStatements.push(i);
+                }
+
+                values[`statement_${i}`] = $yesCheckbox.is(':checked') ? 1 :
+                    ($noCheckbox.is(':checked') ? 0 : null);
+            }
+
+            return {
+                values: values,
+                allFilled: allFilled,
+                missingStatements: missingStatements
+            };
+     }
+
+    function showCheckboxValues() {
+        const result = getAllCheckboxValues();
+        // Tampilkan dalam format tabel
+        for (let i = 1; i <= 9; i++) {
+            const value = result.values[`statement_${i}`];
+            const status = value === 1 ? 'Yes (1)' :
+                value === 0 ? 'No (0)' :
+                'Belum dipilih';
+        }
+
+        return result;
+    }
+
+    function loadReportMLC(keyword) {
+        $('#tbody-report-mlc').html(`
+            <tr>
+                <td colspan="6" class="text-center text-muted">Loading data...</td>
+            </tr>
+        `);
+
+        $.ajax({
+            url: '<?php echo base_url("report/get_report_mlc"); ?>',
+            type: 'GET',
+            data: {
+                name: keyword
+            },
+            dataType: 'json',
+            success: function (res) {
+                let html = '';
+                if (res.success && res.data.length > 0) {
+                    $.each(res.data, function (i, row) {
+                        html += `
+                            <tr>
+                                <td class="text-center">${i + 1}</td>
+                                <td>${row.name_person}</td>
+                                <td>${row.rank}</td>
+                                <td>${row.date_request}</td>
+                                <td>${row.vessel_name}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-info btn-sm btnViewMlcReport" data-id="${row.id}">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm btnDeleteMlcReport" data-id="${row.id}">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                } else {
+                    html = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                Data tidak ditemukan
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                $('#tbody-report-mlc').html(html);
+            }
+        });
+    }
+  
+    function click_list_mlc(){
+        loadReportMLC('');
+        $("#modal-report-mlc").modal("show");
+        $("#modal-form-mlc").modal("hide");
+    }
+
+    function click_form_mlc() {
+        var get_idperson = $("#txtIdPerson").val();
+
+        if (!get_idperson) {
+            alert("Person Empty!");
+            return;
+        }
+
+        $("#modal-report-mlc").modal("hide");
+        $("#modal-report-mlc").one('hidden.bs.modal', function () {
+            $("#modal-form-mlc").modal("show");
+        });
+
+        // console.log("ID Person:", get_idperson);
+
+        $.ajax({
+            url: "<?php echo base_url('report/get_data_form_mlc'); ?>",
+            type: "POST",
+            data: {
+                idperson: get_idperson
+            },
+            dataType: "json",
+            success: function(res) {
+                if (!res.success || !res.data || res.data.length === 0) {
+                    alert("Data tidak ditemukan!");
+                    return;
+                }
+
+                var data = res.data[0];
+                $("#name-crew-mlc").text(data.fullname);
+                $("#jabatan-crew-mlc").text(data.nmrank);
+                $("#date-crew-mlc").text(data.signondt);
+                $("#vessel-crew-mlc").text(data.nmvsl);
+            },
+            error: function(xhr, status, error) {
+                console.log("AJAX Error:", error);
+                alert("Error fetching data.");
+            }
+        });
+    }
+
+    function deleteReportMLC(id) {
+        $.ajax({
+            url: '<?php echo base_url("report/delete_report_mlc"); ?>',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                id: id,
+                '<?php echo $this->security->get_csrf_token_name(); ?>':
+                '<?php echo $this->security->get_csrf_hash(); ?>'
+            },
+            success: function (res) {
+                if (res.status) {
+                    Swal.fire(
+                        'Berhasil!',
+                        res.message,
+                        'success'
+                    );
+
+                    // reload table
+                    loadReportMLC('');
+
+                } else {
+                    Swal.fire(
+                        'Gagal!',
+                        res.message,
+                        'error'
+                    );
+                }
+            },
+            error: function () {
+                Swal.fire(
+                    'Error!',
+                    'Terjadi kesalahan server',
+                    'error'
+                );
+            }
+        });
+    }
+    /*Print Form Mlc End */
+</script>
+
+<script>
+    /*Start forom Debriefing*/
+    function formatDateToInput(dateStr) {
+        if (!dateStr) return '';
+
+        const d = new Date(dateStr);
+        if (isNaN(d)) return '';
+
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    function click_list_debriefing() {
+        loadDebriefing();
+        $("#modal-report-debriefing").modal("show");
+        $("#modal-form-debriefing").modal("hide");
+    }
+
+    function openDebriefingForm() {
+        $("#modal-report-debriefing").modal("hide");
+        click_form_defbreafing();
+    }
+
+    function click_form_defbreafing() {
+        var get_idperson = $("#txtIdPerson").val();
+
+        if (!get_idperson) {
+            alert("Person Empty!");
+            return;
+          }
+
+        $("#modal-report-debriefing").modal("hide");
+        $("#modal-report-debriefing").one('hidden.bs.modal', function () {
+            $("#modal-form-debriefing").modal("show");
+        });
+
+        $.ajax({
+            url: "<?php echo base_url('report/get_data_form_defbreafing'); ?>",
+            type: "POST",
+            data: {
+                idperson: get_idperson
+            },
+            dataType: "json",
+            success: function(res) {
+                // console.log(res);
+                if (!res.success || !res.data) {
+                    alert("Data tidak ditemukan!");
+                    return;
+                }
+
+                // // // Contoh isi ke HTML
+                $("#val-vessel-defbreafing").text(res.data[0].nama_kapal);
+                $("#val-palabuhan-defbreafing").text(res.data[0].pelabuhan);
+                $("#val-jabatan-defbreafing").text(res.data[0].jabatan);
+                $("#val-telp-defbreafing").text(res.data[0].no_telp);
+                $("#val-namecrew-defbreafing").text(res.data[0].nama_crew);
+                $("#val-tgljoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));
+                $("#val-tglsignoff-defbreafing").val(formatDateToInput(res.data[0].tgl_signoff));
+                $("#val-siapjoin-defbreafing").val(formatDateToInput(res.data[0].tgl_join));
+
+            },
+            error: function(xhr, status, error) {
+                console.log("AJAX Error:", xhr.responseText);
+                alert("Error fetching data.");
+            }
+        });
+    }
+
+    function loadDebriefing(keyword = '') {
+        $("#tbody-debriefing").html(`
+            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+        `);
+
+        $.ajax({
+            url: '<?php echo base_url("report/get_report_debriefing"); ?>',
+            type: 'GET',
+            dataType: 'json',
+            data: { keyword: keyword },
+            success: function (res) {
+                let html = '';
+
+                if (res.data.length > 0) {
+                    $.each(res.data, function (i, row) {
+                        html += `
+                            <tr>
+                                <td class="text-center">${i + 1}</td>
+                                <td>${row.name_person}</td>
+                                <td>${row.rank}</td>
+                                <td>${row.vessel_name}</td>
+                                <td class="text-center">${row.date_request}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-info btn-sm viewReportDebriefing" data-id="${row.id}">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm btnDeleteDebriefingReport" data-id="${row.id}">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                Data tidak ditemukan
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                $("#tbody-debriefing").html(html);
+            }
+        });
+    }
+
+    $("#searchDebriefing").on('keyup', function () {
+        loadDebriefing($(this).val());
+    });
+
+    $(document).ready(function () {
+        $('#btn-form-bereafing').on('click', function () {
+            generateBreafingPDF();
+        });
+
+        $(document).on('click', '.btnDeleteDebriefingReport', function () {
+            var id = $(this).data('id');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Delete!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    $.ajax({
+                        url: '<?php echo base_url("report/delete_debriefing"); ?>',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: { id: id },
+                        success: function (res) {
+
+                            if (res.success) {
+                                Swal.fire(
+                                    'Berhasil!',
+                                    res.message,
+                                    'success'
+                                );
+
+                                // reload table
+                                loadDebriefing();
+
+                            } else {
+                                Swal.fire(
+                                    'Gagal!',
+                                    res.message,
+                                    'error'
+                                );
+                            }
+                        },
+                        error: function () {
+                            Swal.fire(
+                                'Error!',
+                                'Terjadi kesalahan server',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+
+        $(document).on('click', '.viewReportDebriefing', function () {
+            const id = $(this).data('id');
+
+            if (!id) {
+                alert('ID Report tidak ditemukan');
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '<?= base_url("report/generatePDF_Breafing") ?>';
+            form.target = '_blank';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'id_report';
+            input.value = id;
+
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        });
+
+
+    });
+
+    function generateBreafingPDF() {
+        var idperson = $("#txtIdPerson").val();
+        if (!idperson) {
+            alert("ID Person kosong!");
+            return;
+        }
+
+        let answers = {};
+
+        // Loop untuk mengambil data dari form-deb-answer_1 sampai form-deb-answer_9
+        for (let i = 1; i <= 9; i++) {
+            let elementId = 'form-deb-answer_' + i;
+            let $element = $("#" + elementId);
+
+            if ($element.length) {
+                // Ambil value atau text berdasarkan tipe elemen
+                answers['answer_' + i] = $element.val() || $element.text() || "";
+            } else {
+                answers['answer_' + i] = "";
+            }
+        }
+        remask_form_deb = $("#form-deb-remaks-box").val();
+        const data = {
+            idperson: idperson,
+            vessel: $("#val-vessel-defbreafing").text(),
+            pelabuhan: $("#val-palabuhan-defbreafing").text(),
+            jabatan: $("#val-jabatan-defbreafing").text(),
+            no_telp: $("#val-telp-defbreafing").text(),
+            nama_crew: $("#val-namecrew-defbreafing").text(),
+            tgl_join: $("#val-tgljoin-defbreafing").val(),
+            tgl_signoff: $("#val-tglsignoff-defbreafing").val(),
+            siap_join: $("#val-siapjoin-defbreafing").val(),
+            certificates: $("#certificates-input-document").val(),
+            answers: JSON.stringify(answers),
+            remask_form_deb: remask_form_deb
+
+        };
+
+        submitPostData_Breafing(data);
+    }
+
+    function submitPostData_Breafing(data) {
+        $.ajax({
+            url: '<?php echo base_url("report/save_debriefing"); ?>',
+            type: 'POST',
+            data: data,
+            dataType: 'json',
+            success: function (res) {
+                if (res.success) {
+                    loadDebriefing();
+                    $("#modal-form-debriefing").modal("hide");
+                    $("#modal-form-debriefing").find("input, textarea").text("");
+                    $("#modal-report-debriefing").modal("show");
+                    alert(res.message);
+                } else {
+                    console.log(" Tidak Berhasil disimpan");
+                    alert(res.message);
+                }
+            },
+            error: function () {
+                alert('Terjadi kesalahan sistem');
+            }
+        });
+    }
+    /*End Form Debriefing*/
+</script>
